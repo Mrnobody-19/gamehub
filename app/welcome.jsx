@@ -13,7 +13,7 @@ const Welcome = () => {
   return (
     <ScreenWrapper>
       <ImageBackground
-        source={require("../assets/images/bg 10.jpg")} // Path to your background image
+        source={require("../assets/images/white.jpg")} // Path to your background image
         style={styles.backgroundImage}
         resizeMode="cover"
       >
@@ -74,7 +74,7 @@ const styles = StyleSheet.create({
   },
   title: {
     color: theme.colors.dark,
-    fontSize: hp(7),
+    fontSize: hp(9),
     textAlign: "center",
     fontWeight: theme.fonts.extrabold,
     fontStyle: 'italic',
@@ -85,7 +85,7 @@ const styles = StyleSheet.create({
   punchline: {
     textAlign: 'center',
     paddingHorizontal: wp(10),
-    fontSize: hp(1.7),
+    fontSize: hp(2.7),
     color: theme.colors.text,
     textShadowColor: 'rgba(255, 255, 255, 0.5)', // White glow for punchline
     textShadowOffset: { width: 0, height: 0 },
@@ -104,6 +104,6 @@ const styles = StyleSheet.create({
   loginText: {
     textAlign: 'center',
     color: theme.colors.text,
-    fontSize: hp(1.6),
+    fontSize: hp(2.6),
   },
 });

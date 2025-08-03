@@ -11,7 +11,7 @@ import Input from '../components/Input';
 import Button from '../components/Button';
 import { supabase } from '../lib/supabase';
 
-const backgroundImage = require('../assets/images/bg 7.jpg'); // Update path if needed
+const backgroundImage = require('../assets/images/white.jpg'); // Update path if needed
 
 const Login = () => {
   const router = useRouter();
@@ -54,21 +54,21 @@ const Login = () => {
           </View>
 
           <View style={styles.form}>
-            <Text style={{ fontSize: hp(1.5), color: theme.colors.text }}>
+            <Text style={{ fontSize: hp(2.5), color: theme.colors.text }}>
               Please Login To Continue
             </Text>
             <Input
               style={styles.input}
               icon={<Icon name="mail" size={26} strokewidth={1.6} />}
               placeholder="Enter your Email"
-              placeholderTextColor="#FFFFFF"
+              placeholderTextColor="black"
               onChangeText={(value) => { emailRef.current = value; }}
             />
             <Input
               style={styles.input}
               icon={<Icon name="lock" size={26} strokewidth={1.6} />}
               placeholder="Enter your password"
-              placeholderTextColor="#FFFFFF"
+              placeholderTextColor="black"
               secureTextEntry
               onChangeText={(value) => { passwordRef.current = value; }}
             />
@@ -124,7 +124,7 @@ const styles = StyleSheet.create({
   footerText: {
     textAlign: 'center',
     color: theme.colors.text,
-    fontSize: hp(1.6),
+    fontSize: hp(2.6),
   },
   input: {
     color: theme.colors.text,

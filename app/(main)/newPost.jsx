@@ -1,28 +1,28 @@
+import { Video } from "expo-av";
+import * as ImagePicker from "expo-image-picker";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import { useEffect, useRef, useState } from "react";
 import {
   Alert,
   Image,
+  ImageBackground,
   Pressable,
   ScrollView,
   StyleSheet,
-  Text,
-  View,
-  ImageBackground, // Import ImageBackground
+  Text, // Import ImageBackground
+  TouchableOpacity,
+  View
 } from "react-native";
-import React, { useEffect, useRef, useState } from "react";
-import ScreenWrapper from "../../components/ScreenWrapper";
-import Header from "../../components/Header";
-import { hp, wp } from "../../helpers/common";
-import { theme } from "../../constants/theme";
-import Avatar from "../../components/Avater";
-import { useAuth } from "../../contexts/AuthContext";
-import RichTextEditor from "../../components/RichTextEditor";
-import { useLocalSearchParams, useRouter } from "expo-router";
 import Icon from "../../assets/icons";
+import Avatar from "../../components/Avater";
 import Button from "../../components/Button";
-import { TouchableOpacity } from "react-native";
-import * as ImagePicker from "expo-image-picker";
+import Header from "../../components/Header";
+import RichTextEditor from "../../components/RichTextEditor";
+import ScreenWrapper from "../../components/ScreenWrapper";
+import { theme } from "../../constants/theme";
+import { useAuth } from "../../contexts/AuthContext";
+import { hp, wp } from "../../helpers/common";
 import { getSupabaseFileUrl } from "../../services/imageService";
-import { Video } from "expo-av";
 import { createOrUpdatePost } from "../../services/postService";
 
 const NewPost = () => {
@@ -42,7 +42,7 @@ const NewPost = () => {
         editorRef?.current?.setContentHTML(post.body); // Set editor content from post body
       }, 300);
     }
-  }, []);
+  }, [post]);
 
   const onPick = async (isImage) => {
     let mediaConfig = {
@@ -119,7 +119,7 @@ const NewPost = () => {
   return (
     <ScreenWrapper bg="tranparent">
       <ImageBackground
-       source={require('../../assets/images/bg 7.jpg')}
+       source={require('../../assets/images/white.jpg')}
         style={styles.backgroundImage}
       >
         <View style={styles.container}>

@@ -71,13 +71,13 @@ const PostDetails = () => {
     return () => {
       supabase.removeChannel(commentChannel);
     };
-  }, []);
+  }, [getPostDetails, postId]);
 
-  const getPostDetails = async () => {
+  const getPostDetails = React.useCallback(async () => {
     let res = await fetchPostDetails(postId);
     if (res.success) setPost(res.data);
     setStartLoading(false);
-  };
+  }, [postId]);
 
   const onNewComment = async () => {
     let data = {
@@ -102,7 +102,7 @@ const PostDetails = () => {
       setPost((prevPost) => {
         let updatePost = { ...prevPost };
         updatePost.comments = updatePost.comments.filter(
-          (e) => e.id != comment.id
+          (e) => e.id !== comment.id
         );
         return updatePost;
       });
@@ -198,10 +198,10 @@ const PostDetails = () => {
                   key={comment?.id?.toString()}
                   item={comment}
                   onDelete={onDeleteComment}
-                  canDelete={user.id == comment.userId || user.id == post.userId}
+                  canDelete={user.id === comment.userId || user.id === post.userId}
                 />
               ))}
-              {post?.comments?.length == 0 && (
+              {post?.comments?.length === 0 && (
                 <Text style={{ color: theme.colors.text, marginLeft: 5 }}>
                   Be first to comment
                 </Text>

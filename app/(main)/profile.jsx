@@ -1,25 +1,16 @@
-/* eslint-disable import/no-duplicates */
-import { Alert, StyleSheet, Pressable, Text, View, ImageBackground } from "react-native";
+import { Alert, StyleSheet, Pressable, Text, View, ImageBackground, FlatList, TouchableOpacity } from "react-native";
 import React, { useState } from "react";
 import ScreenWrapper from "../../components/ScreenWrapper";
 import { useAuth } from "../../contexts/AuthContext";
 import { useRouter } from "expo-router";
 import { supabase } from "../../lib/supabase";
-import Header from "../../components/Header";
-import { theme } from "../../constants/theme";
-import { TouchableOpacity } from "react-native";
 import Icon from "../../assets/icons";
 import { hp, wp } from "../../helpers/common";
 import Avater from "../../components/Avater";
 import { fetchPosts } from "../../services/postService";
 import PostCard from "../../components/PostCard";
-import { FlatList } from 'react-native';
 import Loading from "../../components/Loading";
-
-// Background image import
-const backgroundImage = require('../../assets/images/bg 7.jpg'); // Update with the actual path to your background image
-
-let limit = 0;
+import { theme } from "../../constants/theme";
 
 const Profile = () => {
   const { user } = useAuth();
@@ -27,61 +18,93 @@ const Profile = () => {
   const [posts, setPosts] = useState([]);
   const [hasMore, setHasMore] = useState(true);
 
+  const stats = [
+    { label: "Posts", value: posts.length.toString() },
+    { label: "Followers", value: "0" },
+    { label: "Following", value: "0" }
+  ];
+
   const onLogout = async () => {
     const { error } = await supabase.auth.signOut();
     if (error) {
       Alert.alert("Sign out", "Error signing out!");
+    } else {
+      router.replace("/auth/login");
     }
   };
 
   const getPosts = async () => {
     if (!hasMore) return;
-
-    limit += 4;
-    console.log("Fetching post:", limit);
-
-    let res = await fetchPosts(limit, user.id);
+    let res = await fetchPosts(posts.length + 4, user.id);
     if (res.success) {
-      if (posts.length === res.data.length) {
-        setHasMore(false);
-      }
+      if (posts.length === res.data.length) setHasMore(false);
       setPosts(res.data);
     }
   };
 
   const handleLogout = async () => {
-    // show confirm modal
     Alert.alert("Confirm", "Are you sure you want to log out?", [
-      {
-        text: "Cancel",
-        onPress: () => console.log("modal cancelled"),
-        style: "cancel",
-      },
-      {
-        text: "Logout",
-        onPress: () => onLogout(),
-        style: "destructive",
-      },
+      { text: "Cancel", style: "cancel" },
+      { text: "Logout", onPress: onLogout, style: "destructive" }
     ]);
   };
 
   return (
-    <ImageBackground source={backgroundImage} style={styles.background}>
+    <ImageBackground source={require('../../assets/images/white.jpg')} style={styles.background}>
       <ScreenWrapper bg="transparent">
         <FlatList
           data={posts}
-          ListHeaderComponent={<UserHeader user={user} router={router} handleLogout={handleLogout} />}
-          ListHeaderComponentStyle={{ marginBottom: 30 }}
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.listStyle}
-          keyExtractor={(item) => item.id.toString()}
+          ListHeaderComponent={
+            <View style={styles.headerContainer}>
+              {/* Logout Button */}
+              <View style={styles.headerActions}>
+                <TouchableOpacity 
+                  style={styles.logoutButton}
+                  onPress={handleLogout}
+                >
+                  <Icon name="logout" size={hp(2.5)} color={theme.colors.error} />
+                  <Text style={styles.logoutText}>Logout</Text>
+                </TouchableOpacity>
+              </View>
+
+              {/* Profile Header */}
+              <View style={styles.profileHeader}>
+                <View style={styles.avatarContainer}>
+                  <Avater uri={user?.image} size={hp(12)} rounded={theme.radius.xxl * 1.4} />
+                  <Pressable
+                    style={styles.editIcons}
+                    onPress={() => router.push("editProfile")}
+                  >
+                    <Icon name="edit" strokeWidth={2.5} size={20} />
+                  </Pressable>
+                </View>
+
+                <Text style={styles.username}>{user?.name || "Angelina Hall"}</Text>
+                <Text style={styles.handle}>@{user?.name || "angelina.hall"}</Text>
+                
+                {/* Stats Row */}
+                <View style={styles.statsContainer}>
+                  {stats.map((stat, index) => (
+                    <View key={index} style={styles.statItem}>
+                      <Text style={styles.statValue}>{stat.value}</Text>
+                      <Text style={styles.statLabel}>{stat.label}</Text>
+                    </View>
+                  ))}
+                </View>
+                
+                {/* Follow Button - Hidden for own profile */}
+                {!user?.isCurrentUser && (
+                  <TouchableOpacity style={styles.followButton}>
+                    <Text style={styles.followButtonText}>Follow</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+            </View>
+          }
           renderItem={({ item }) => (
             <PostCard item={item} currentUser={user} router={router} />
           )}
-          onEndReached={() => {
-            getPosts();
-            console.log("Reached the end");
-          }}
+          onEndReached={getPosts}
           onEndReachedThreshold={0.5}
           ListFooterComponent={
             hasMore ? (
@@ -94,84 +117,51 @@ const Profile = () => {
               </View>
             )
           }
+          contentContainerStyle={styles.listStyle}
         />
       </ScreenWrapper>
     </ImageBackground>
   );
 };
 
-const UserHeader = ({ user, router, handleLogout }) => {
-  return (
-    <View style={{ flex: 1, backgroundColor: "transparent" }}>
-      <View>
-        <Header title="Profile" showBackButton={true} />
-        <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-          <Icon name="logout" color={theme.colors.roses} />
-        </TouchableOpacity>
-      </View>
-
-      <View style={{ gap: 15 }}>
-        <View style={styles.avaterContainer}>
-          <Avater uri={user?.image} size={hp(12)} rounded={theme.radius.xxl * 1.4} />
-          <Pressable
-            style={styles.editIcons}
-            onPress={() => router.push("editProfile")}
-          >
-            <Icon name="edit" strokeWidth={2.5} size={20} />
-          </Pressable>
-        </View>
-
-        {/*username*/}
-
-        <View style={{ alignItems: "center", gap: 4 }}>
-          <Text style={styles.username}>{user && user.name}</Text>
-          <Text style={styles.infoText}>{user && user.address}</Text>
-        </View>
-
-        {/* email, phone, bio */}
-        <View style={{ gap: 10 }}>
-          <View style={styles.info}>
-            <Icon name="mail" size={20} color={theme.colors.textlight} />
-            <Text style={styles.infoText}>{user && user.email}</Text>
-          </View>
-          <View style={styles.info}>
-            <Icon name="call" size={20} color={theme.colors.textlight} />
-            <Text style={styles.infoText}>{user && user.phoneNumber}</Text>
-          </View>
-          <View style={styles.info}>
-            <Icon name="user" size={20} color={theme.colors.textlight} />
-            <Text style={styles.infoText}>{user && user.bio}</Text>
-          </View>
-        </View>
-      </View>
-    </View>
-  );
-};
-
-export default Profile;
-
 const styles = StyleSheet.create({
   background: {
     flex: 1,
     justifyContent: 'center',
   },
-  container: {
-    flex: 1,
-  },
   headerContainer: {
-    marginHorizontal: wp(4),
-    marginBottom: 20,
+    paddingHorizontal: wp(4),
+    paddingBottom: 30,
   },
-  headerShape: {
-    width: wp(100),
-    height: hp(20),
+  headerActions: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    marginBottom: hp(1),
   },
-  avaterContainer: {
+  logoutButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: wp(1.5),
+    paddingVertical: hp(1),
+    paddingHorizontal: wp(3),
+    borderRadius: theme.radius.sm,
+    backgroundColor: theme.colors.error + '10',
+  },
+  logoutText: {
+    color: theme.colors.error,
+    fontSize: hp(1.8),
+    fontWeight: '500',
+  },
+  profileHeader: {
+    alignItems: 'center',
+    marginBottom: hp(4),
+  },
+  avatarContainer: {
     height: hp(12),
     width: hp(12),
     alignSelf: "center",
+    position: 'relative',
   },
-
   editIcons: {
     position: "absolute",
     bottom: 0,
@@ -185,43 +175,55 @@ const styles = StyleSheet.create({
     shadowRadius: 5,
     elevation: 7,
   },
-
   username: {
     fontSize: hp(3),
-    fontWeight: "500",
+    fontWeight: "600",
     color: theme.colors.text,
-    fontStyle: "italic",
+    marginTop: hp(1),
   },
-
-  info: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
+  handle: {
+    fontSize: hp(1.8),
+    color: theme.colors.textlight,
+    marginBottom: hp(2),
+  },
+  statsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    width: '100%',
+    marginVertical: hp(2),
+  },
+  statItem: {
+    alignItems: 'center',
+  },
+  statValue: {
+    fontSize: hp(2.5),
+    fontWeight: '600',
     color: theme.colors.text,
   },
-
-  infoText: {
+  statLabel: {
     fontSize: hp(1.6),
-    fontWeight: "500",
     color: theme.colors.textlight,
   },
-
-  logoutButton: {
-    position: "absolute",
-    right: 0,
-    padding: 5,
-    borderRadius: theme.radius.sm,
-    backgroundColor: "#fee2e2",
+  followButton: {
+    backgroundColor: theme.colors.primary,
+    paddingVertical: hp(1.5),
+    paddingHorizontal: wp(20),
+    borderRadius: theme.radius.lg,
+    marginTop: hp(1),
   },
-
+  followButtonText: {
+    color: 'white',
+    fontWeight: '600',
+    fontSize: hp(1.8),
+  },
   listStyle: {
-    paddingHorizontal: wp(4),
     paddingBottom: 30,
   },
-
-  noPost: {
+  noPosts: {
     fontSize: hp(2),
     textAlign: "center",
     color: theme.colors.text,
   },
 });
+
+export default Profile;
