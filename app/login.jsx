@@ -11,7 +11,7 @@ import Input from '../components/Input';
 import Button from '../components/Button';
 import { supabase } from '../lib/supabase';
 
-const backgroundImage = require('../assets/images/white.jpg'); // Update path if needed
+const backgroundImage = require('../assets/images/white.jpg');
 
 const Login = () => {
   const router = useRouter();
@@ -36,8 +36,8 @@ const Login = () => {
     if (error) {
       Alert.alert('Login Failed', error.message);
     } else {
-      Alert.alert('Success', 'Logged in!');
-      router.push('/dashboard'); // Update to your main screen
+      // Navigate directly to home.jsx without showing alert
+      router.replace('/home'); // Changed from '/app/(main)/home.jsx' to '/home'
     }
   };
 

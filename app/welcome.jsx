@@ -24,7 +24,7 @@ const Welcome = () => {
             resizeMode="contain"
           />
           <View style={{ gap: 20 }}>
-            <Text style={styles.title}>FuseHub!</Text>
+            <Text style={styles.title}>Vibexa!</Text>
             <Text style={styles.punchline}>
               &quot;Where Connection Ignites&quot;
             </Text>

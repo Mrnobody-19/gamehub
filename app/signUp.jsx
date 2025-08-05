@@ -1,5 +1,5 @@
 import { StyleSheet, Text, View, Alert, ImageBackground, TouchableOpacity } from 'react-native';
-import React, { useState, useRef } from 'react';
+import React, { useState, } from 'react';
 import ScreenWrapper from '../components/ScreenWrapper';
 import { theme } from '../constants/theme';
 import { StatusBar } from 'expo-status-bar';

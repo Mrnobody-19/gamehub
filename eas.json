@@ -1,0 +1,31 @@
+{
+  "cli": {
+    "version": ">= 16.17.4",
+    "appVersionSource": "remote"
+  },
+  "build": {
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal",
+      "android": {
+        "buildType": "apk"  // Generates debug APK
+      }
+    },
+    "preview": {
+      "distribution": "internal",
+      "android": {
+        "buildType": "apk"  // Generates unsigned APK for testing
+      }
+    },
+    "production": {
+      "autoIncrement": false,
+      "android": {
+        "buildType": "apk",  // Generates signed release APK
+        "gradleCommand": ":app:bundleRelease"  // Optional: Use ':app:assembleRelease' for APK
+      }
+    }
+  },
+  "submit": {
+    "production": {}
+  }
+}

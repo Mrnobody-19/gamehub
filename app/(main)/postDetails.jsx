@@ -143,7 +143,7 @@ const PostDetails = () => {
 
   return (
     <ImageBackground
-      source={require('../../assets/images/bg 7.jpg')} // Path to your background image
+      source={require('../../assets/images/white.jpg')} // Path to your background image
       style={{ flex: 1 }}
       resizeMode="cover"
     >
