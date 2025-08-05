@@ -1,108 +1,121 @@
 import { Alert, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
 import React from 'react'
 import { theme } from '../constants/theme'
-import { hp } from '../helpers/common'
+import { hp, wp } from '../helpers/common'
 import Avater from './Avater'
 import moment from 'moment'
 import Icon from '../assets/icons'
 
 const CommentItem = ({
     item,
-    canDelete =  false,
-    onDelete = ()=>{}
+    canDelete = false,
+    onDelete = () => {}
 }) => {
-    const createdAt = moment(item?.created_at).format('MMM d');
+    const createdAt = moment(item?.created_at).format('MMM D, h:mm A');
 
-    const handleDelete = ()=> {
-        Alert.alert('Confirm',"Are you sure you want to delete this?",[
+    const handleDelete = () => {
+        Alert.alert('Confirm', "Delete this comment?", [
             {
-              text: 'Cancel',
-              onPress:()=> console.log('modal cancelled'),
-              style: 'cancel'
+                text: 'Cancel',
+                style: 'cancel'
             },
             {
-                text: 'delete',
-                onPress:()=> onDelete(item),
+                text: 'Delete',
+                onPress: () => onDelete(item),
                 style: 'destructive'
             },
-          ])
+        ])
     }
-  return (
-    <View style={styles.container}>
-                <Avater
-                    uri={item?.user?.image}
-                />
+
+    return (
+        <View style={styles.container}>
+            <Avater
+                uri={item?.user?.image}
+                size={hp(4.5)}
+                style={styles.avatar}
+            />
             
-            <View style={styles.content}>
-                <View style={{flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center'}}>
-                    <View style={styles.nameContainer}>
-                        <Text style={styles.text}>
-                            {
-                                item?.user?.name
-                            }
+            <View style={styles.contentWrapper}>
+                <View style={styles.content}>
+                    <View style={styles.header}>
+                        <Text style={styles.name}>
+                            {item?.user?.name}
                         </Text>
-                        <Text style={styles.text}>
-                            {
-                                createdAt
-                            }
+                        <Text style={styles.time}>
+                            {createdAt}
                         </Text>
                     </View>
-                    {
-                        canDelete && (
-                            <TouchableOpacity onPress={handleDelete}>
-                                <Icon name="delete" size={20} color={theme.colors.roses}/>
-                            </TouchableOpacity>
-                        )
-                    }
-                   
+                    
+                    <Text style={styles.commentText}>
+                        {item?.text}
+                    </Text>
                 </View>
-                <Text style={[styles.text, {fontWeight: 'normal'}]}>
-                    {item?.text}
-                </Text>
+
+                {canDelete && (
+                    <TouchableOpacity 
+                        onPress={handleDelete}
+                        style={styles.deleteButton}
+                        activeOpacity={0.7}
+                    >
+                        <Icon name="delete" size={hp(2.2)} color="#888" />
+                    </TouchableOpacity>
+                )}
             </View>
-    </View>
-  )
+        </View>
+    )
 }
 
 export default CommentItem
 
 const styles = StyleSheet.create({
     container: {
+        flexDirection: 'row',
+        gap: wp(2.5),
+        marginBottom: hp(1.5),
+    },
+    avatar: {
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.1)',
+    },
+    contentWrapper: {
         flex: 1,
         flexDirection: 'row',
-        gap: 7,
+        alignItems: 'flex-start',
+        gap: wp(2),
     },
-
-    content:{
-        backgroundColor: '#A8DCE7',
+    content: {
         flex: 1,
-        gap: 5,
-        paddingHorizontal: 14,
-        paddingVertical: 10,
-        borderRadius: theme.radius.md,
-        borderCurve: 'continuous'
+        backgroundColor: '#1a1a1a',
+        paddingHorizontal: wp(3.5),
+        paddingVertical: hp(1.8),
+        borderRadius: theme.radius.lg,
+        borderTopLeftRadius: hp(0.8),
+        borderWidth: 0.5,
+        borderColor: 'rgba(255,255,255,0.05)',
     },
-
-    Highlight:{
-        borderWidth: 0.2,
-        backgroundColor: 'white',
-        borderColor: theme.colors.grey,
-        shadowColor: theme.colors.dark,
-        shadowOffset: {width: 0, height: 0},
-        shadowOpacity: 0.3,
-        shadowRadius: 8,
-        elevation: 5
-    },
-
-    nameContainer: {
+    header: {
         flexDirection: 'row',
+        justifyContent: 'space-between',
         alignItems: 'center',
-        gap: 3
+        marginBottom: hp(0.8),
     },
-
-    text:{
-        fontSize: hp(1.6),
-        fontWeight: theme.fonts.medium,
-        
-    }
+    name: {
+        fontSize: hp(1.8),
+        fontWeight: '600',
+        color: '#f0f0f0',
+    },
+    time: {
+        fontSize: hp(1.4),
+        color: '#666',
+    },
+    commentText: {
+        fontSize: hp(1.7),
+        color: '#e0e0e0',
+        lineHeight: hp(2.4),
+    },
+    deleteButton: {
+        padding: wp(2),
+        borderRadius: 100,
+        backgroundColor: 'rgba(255,255,255,0.05)',
+    },
 })

@@ -1,4 +1,4 @@
-import { Image, Pressable, StyleSheet, Text, View, ImageBackground } from "react-native";
+import { Image, Pressable, StyleSheet, Text, View } from "react-native";
 import React from "react";
 import ScreenWrapper from "../components/ScreenWrapper";
 import { hp, wp } from "../helpers/common";
@@ -12,13 +12,9 @@ const Welcome = () => {
 
   return (
     <ScreenWrapper>
-      <ImageBackground
-        source={require("../assets/images/white.jpg")} // Path to your background image
-        style={styles.backgroundImage}
-        resizeMode="cover"
-      >
+      <View style={styles.container}>
         <StatusBar style="dark" />
-        <View style={styles.container}>
+        <View style={styles.content}>
           <Image
             style={styles.welcomeImage} 
             resizeMode="contain"
@@ -48,7 +44,7 @@ const Welcome = () => {
             </View>
           </View>
         </View>
-      </ImageBackground>
+      </View>
     </ScreenWrapper>
   );
 };
@@ -56,12 +52,11 @@ const Welcome = () => {
 export default Welcome;
 
 const styles = StyleSheet.create({
-  backgroundImage: {
-    flex: 1,
-    width: '100%',
-    height: '100%',
-  },
   container: {
+    flex: 1,
+    backgroundColor: "black", // Replace with your preferred color
+  },
+  content: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'space-around',
@@ -78,18 +73,18 @@ const styles = StyleSheet.create({
     textAlign: "center",
     fontWeight: theme.fonts.extrabold,
     fontStyle: 'italic',
-    textShadowColor: 'rgba(255, 0, 255, 0.7)', // Pink neon glow
+    textShadowColor: 'rgba(255, 0, 255, 0.7)',
     textShadowOffset: { width: 0, height: 0 },
-    textShadowRadius: 10, // Glow effect radius
+    textShadowRadius: 10,
   },
   punchline: {
     textAlign: 'center',
     paddingHorizontal: wp(10),
     fontSize: hp(2.7),
     color: theme.colors.text,
-    textShadowColor: 'rgba(255, 255, 255, 0.5)', // White glow for punchline
+    textShadowColor: 'rgba(255, 255, 255, 0.5)',
     textShadowOffset: { width: 0, height: 0 },
-    textShadowRadius: 5, // Glow effect radius
+    textShadowRadius: 5,
   },
   footer: {
     gap: 30,

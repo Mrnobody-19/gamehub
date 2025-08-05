@@ -11,7 +11,6 @@ import Input from '../components/Input';
 import Button from '../components/Button';
 import { supabase } from '../lib/supabase';
 
-const backgroundImage = require('../assets/images/white.jpg');
 
 const Login = () => {
   const router = useRouter();
@@ -42,7 +41,7 @@ const Login = () => {
   };
 
   return (
-    <ImageBackground source={backgroundImage} style={styles.background}>
+
       <ScreenWrapper bg="transparent">
         <StatusBar style="dark" />
         <View style={styles.container}>
@@ -61,14 +60,14 @@ const Login = () => {
               style={styles.input}
               icon={<Icon name="mail" size={26} strokewidth={1.6} />}
               placeholder="Enter your Email"
-              placeholderTextColor="black"
+              placeholderTextColor="white"
               onChangeText={(value) => { emailRef.current = value; }}
             />
             <Input
               style={styles.input}
               icon={<Icon name="lock" size={26} strokewidth={1.6} />}
               placeholder="Enter your password"
-              placeholderTextColor="black"
+              placeholderTextColor="white"
               secureTextEntry
               onChangeText={(value) => { passwordRef.current = value; }}
             />
@@ -86,18 +85,15 @@ const Login = () => {
           </View>
         </View>
       </ScreenWrapper>
-    </ImageBackground>
   );
 };
 
 export default Login;
 
 const styles = StyleSheet.create({
-  background: {
-    flex: 1,
-    justifyContent: 'center',
-  },
+
   container: {
+    backgroundColor: "black",
     flex: 1,
     gap: 45,
     paddingHorizontal: wp(4),

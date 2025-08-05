@@ -41,9 +41,9 @@ const PostCard = ({
     body: textStyle,
     p: textStyle,
     div: textStyle,
-    a: { ...textStyle, color: theme.colors.primary },
-    h1: { ...textStyle, fontSize: hp(3), fontWeight: 'bold' },
-    h4: { ...textStyle, fontSize: hp(2.5), fontWeight: '600' },
+    a: { ...textStyle, color: theme.colors.primary, textDecorationLine: 'underline' },
+    h1: { ...textStyle, fontSize: hp(3), fontWeight: 'bold', marginVertical: hp(1) },
+    h4: { ...textStyle, fontSize: hp(2.5), fontWeight: '600', marginVertical: hp(0.5) },
   };
 
   const openPostDetails = () => showMoreIcon && router.push({ 
@@ -90,80 +90,108 @@ const PostCard = ({
     <View style={[styles.card, hasShadow && styles.shadow]}>
       {/* Header */}
       <View style={styles.header}>
-        <View style={styles.userInfo}>
+        <TouchableOpacity style={styles.userInfo} onPress={openPostDetails}>
           <Avater
             size={hp(5)}
             uri={item?.user?.image}
             rounded={theme.radius.lg}
             style={styles.avatar}
           />
-          <View>
+          <View style={styles.userTextContainer}>
             <Text style={styles.username}>{item?.user?.name}</Text>
             <Text style={styles.time}>{moment(item?.created_at).fromNow()}</Text>
           </View>
-        </View>
+        </TouchableOpacity>
         {showMoreIcon && (
-          <TouchableOpacity onPress={openPostDetails}>
-            <Icon name="threeDotsHorizontal" size={hp(3)} color="#888" />
+          <TouchableOpacity 
+            onPress={openPostDetails}
+            style={styles.moreButton}
+          >
+            <Icon name="threeDotsHorizontal" size={hp(2.5)} color="#888" />
           </TouchableOpacity>
         )}
       </View>
 
       {/* Content */}
-      <View style={styles.content}>
-        {item?.body && (
-          <RenderHTML
-            contentWidth={wp(85)}
-            source={{ html: item.body }}
-            tagsStyles={tagsStyles}
-          />
-        )}
-        
-        {item?.file && item.file.includes("postImage") && (
-          <Image
-            source={getSupabaseFileUrl(item.file)}
-            style={styles.mediaImage}
-            contentFit="cover"
-            transition={200}
-          />
-        )}
+      <TouchableOpacity onPress={openPostDetails} activeOpacity={0.9}>
+        <View style={styles.content}>
+          {item?.body && (
+            <RenderHTML
+              contentWidth={wp(85)}
+              source={{ html: item.body }}
+              tagsStyles={tagsStyles}
+              baseStyle={{ paddingHorizontal: wp(1) }}
+            />
+          )}
+          
+          {item?.file && item.file.includes("postImage") && (
+            <Image
+              source={getSupabaseFileUrl(item.file)}
+              style={styles.mediaImage}
+              contentFit="cover"
+              transition={200}
+            />
+          )}
 
-        {item?.file && item.file.includes("postVideos") && (
-          <Video
-            source={getSupabaseFileUrl(item.file)}
-            style={styles.mediaVideo}
-            useNativeControls
-            resizeMode="cover"
-          />
-        )}
-      </View>
+          {item?.file && item.file.includes("postVideos") && (
+            <Video
+              source={getSupabaseFileUrl(item.file)}
+              style={styles.mediaVideo}
+              useNativeControls
+              resizeMode="cover"
+            />
+          )}
+        </View>
+      </TouchableOpacity>
 
       {/* Footer */}
       <View style={styles.footer}>
-        <TouchableOpacity style={styles.action} onPress={onLike}>
-          <Icon
-            name="heart"
-            size={hp(3)}
-            color={isLiked ? theme.colors.roses : "#888"}
-            fill={isLiked ? theme.colors.roses : "transparent"}
-          />
-          <Text style={[styles.count, isLiked && styles.likedCount]}>
-            {likes.length || ''}
-          </Text>
+        <TouchableOpacity 
+          style={styles.action} 
+          onPress={onLike}
+          activeOpacity={0.7}
+        >
+          <View style={styles.iconContainer}>
+            <Icon
+              name="heart"
+              size={hp(3)}
+              color={isLiked ? theme.colors.roses : "#888"}
+              fill={isLiked ? theme.colors.roses : "transparent"}
+            />
+            {likes.length > 0 && (
+              <Text style={[styles.count, isLiked && styles.likedCount]}>
+                {likes.length}
+              </Text>
+            )}
+          </View>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.action} onPress={openPostDetails}>
-          <Icon name="comment" size={hp(3)} color="#888" />
-          <Text style={styles.count}>
-            {item?.comments?.[0]?.count || ''}
-          </Text>
+        <TouchableOpacity 
+          style={styles.action} 
+          onPress={openPostDetails}
+          activeOpacity={0.7}
+        >
+          <View style={styles.iconContainer}>
+            <Icon name="comment" size={hp(3)} color="#888" />
+            {item?.comments?.[0]?.count > 0 && (
+              <Text style={styles.count}>
+                {item?.comments?.[0]?.count}
+              </Text>
+            )}
+          </View>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.action} onPress={onShare}>
+        <TouchableOpacity 
+          style={styles.action} 
+          onPress={onShare}
+          activeOpacity={0.7}
+        >
           {loading ? (
             <Loading size="small" color="#888" />
           ) : (
-            <Icon name="share" size={hp(3)} color="#888" />
+            <View style={styles.iconContainer}>
+              <Icon name="share" size={hp(3)} color="#888" />
+            </View>
           )}
         </TouchableOpacity>
       </View>
@@ -171,11 +199,19 @@ const PostCard = ({
       {/* Edit/Delete (for user's posts) */}
       {showDelete && currentUser?.id === item?.userId && (
         <View style={styles.editActions}>
-          <TouchableOpacity style={styles.editBtn} onPress={() => onEdit(item)}>
+          <TouchableOpacity 
+            style={styles.editBtn} 
+            onPress={() => onEdit(item)}
+            activeOpacity={0.7}
+          >
             <Icon name="edit" size={hp(2.5)} color={theme.colors.primary} />
             <Text style={styles.editText}>Edit</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.deleteBtn} onPress={handlePostDelete}>
+          <TouchableOpacity 
+            style={styles.deleteBtn} 
+            onPress={handlePostDelete}
+            activeOpacity={0.7}
+          >
             <Icon name="delete" size={hp(2.5)} color={theme.colors.error} />
             <Text style={styles.deleteText}>Delete</Text>
           </TouchableOpacity>
@@ -188,17 +224,19 @@ const PostCard = ({
 const styles = StyleSheet.create({
   card: {
     backgroundColor: '#fff',
-    borderRadius: 16,
+    borderRadius: 20,
     marginBottom: hp(2),
-    padding: hp(2),
+    padding: hp(2.5),
     overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: '#f0f0f0',
   },
   shadow: {
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 6,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 12,
+    elevation: 5,
   },
   header: {
     flexDirection: 'row',
@@ -209,11 +247,15 @@ const styles = StyleSheet.create({
   userInfo: {
     flexDirection: 'row',
     alignItems: 'center',
+    flex: 1,
+  },
+  userTextContainer: {
+    flex: 1,
   },
   avatar: {
     marginRight: wp(3),
-    borderWidth: 1,
-    borderColor: '#f0f0f0',
+    borderWidth: 1.5,
+    borderColor: '#f8f8f8',
   },
   username: {
     fontSize: hp(2.3),
@@ -225,38 +267,48 @@ const styles = StyleSheet.create({
     color: '#888',
     marginTop: hp(0.3),
   },
+  moreButton: {
+    padding: wp(1.5),
+    borderRadius: 20,
+  },
   content: {
     marginBottom: hp(1.5),
   },
   mediaImage: {
     width: '100%',
     height: hp(40),
-    borderRadius: 12,
+    borderRadius: 16,
     marginTop: hp(1.5),
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#f8f8f8',
   },
   mediaVideo: {
     width: '100%',
     height: hp(40),
-    borderRadius: 12,
+    borderRadius: 16,
     marginTop: hp(1.5),
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#f8f8f8',
   },
   footer: {
     flexDirection: 'row',
-    paddingTop: hp(1),
+    paddingTop: hp(1.5),
     borderTopWidth: 1,
-    borderTopColor: '#f0f0f0',
+    borderTopColor: '#f5f5f5',
+    justifyContent: 'space-around',
   },
   action: {
+    paddingVertical: hp(0.5),
+    paddingHorizontal: wp(2),
+    borderRadius: 12,
+  },
+  iconContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginRight: wp(8),
   },
   count: {
-    marginLeft: wp(1),
+    marginLeft: wp(1.5),
     fontSize: hp(1.8),
     color: '#888',
+    fontWeight: '500',
   },
   likedCount: {
     color: theme.colors.roses,
@@ -271,26 +323,30 @@ const styles = StyleSheet.create({
   editBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: wp(2),
-    borderRadius: 8,
-    backgroundColor: 'rgba(0, 122, 255, 0.1)',
+    paddingVertical: hp(1),
+    paddingHorizontal: wp(3),
+    borderRadius: 10,
+    backgroundColor: 'rgba(0, 122, 255, 0.08)',
   },
   deleteBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: wp(2),
-    borderRadius: 8,
-    backgroundColor: 'rgba(255, 59, 48, 0.1)',
+    paddingVertical: hp(1),
+    paddingHorizontal: wp(3),
+    borderRadius: 10,
+    backgroundColor: 'rgba(255, 59, 48, 0.08)',
   },
   editText: {
-    marginLeft: wp(1),
+    marginLeft: wp(1.5),
     color: theme.colors.primary,
     fontSize: hp(1.8),
+    fontWeight: '500',
   },
   deleteText: {
-    marginLeft: wp(1),
+    marginLeft: wp(1.5),
     color: theme.colors.error,
     fontSize: hp(1.8),
+    fontWeight: '500',
   },
 });
 

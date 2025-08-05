@@ -5,7 +5,6 @@ import {
   ScrollView,
   Alert,
   TouchableOpacity,
-  ImageBackground,  // Import ImageBackground
 } from "react-native";
 import React, { useEffect, useRef, useState } from "react";
 import { hp, wp } from "../../helpers/common";
@@ -27,6 +26,7 @@ import Icon from "../../assets/icons";
 import CommentItem from "../../components/CommentItem";
 import { supabase } from "../../lib/supabase";
 import { getUserData } from "../../services/userServices";
+import { createNotification } from "../../services/notificationService";
 
 const PostDetails = () => {
   const { postId } = useLocalSearchParams();
@@ -89,6 +89,16 @@ const PostDetails = () => {
     let res = await createComment(data);
     setLoading(false);
     if (res.success) {
+      if(user.id !== post.userId){
+        // send notification to post owner
+        let notify = {
+          senderId: user.id,
+          receiverId: post.userId,
+          title: "commented on your post",
+          data: JSON.stringify({postId: post.id, commentId: res.data.id}),
+        }
+        createNotification(notify);
+      }
       inputRef?.current?.clear();
       commentRef.current = "";
     } else {
@@ -142,18 +152,15 @@ const PostDetails = () => {
   }
 
   return (
-    <ImageBackground
-      source={require('../../assets/images/white.jpg')} // Path to your background image
-      style={{ flex: 1 }}
-      resizeMode="cover"
-    >
-      <ScreenWrapper bg="transparent">
-        <Header title="Post Details" />
-        <View style={styles.container}>
-          <ScrollView
-            showsVerticalScrollIndicator={false}
-            contentContainerStyle={styles.list}
-          >
+    <ScreenWrapper bg="#0a0a0a">
+      <Header title="Post Details" showBackButton={true} />
+      <View style={styles.container}>
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.list}
+        >
+          {/* Post Card with glass morphism effect */}
+          <View style={styles.postContainer}>
             <PostCard
               item={{ ...post, comments: [{ count: post.comments?.length }] }}
               currentUser={user}
@@ -164,53 +171,54 @@ const PostDetails = () => {
               onDelete={onDeletePost}
               onEdit={onEditPost}
             />
+          </View>
 
-            {/* Comment Input */}
-            <View style={styles.inputContainer}>
-              <Input
-                inputRef={inputRef}
-                style={styles.input}
-                placeholder="Type comment..."
-                placeholderTextColor={theme.colors.dark}
-                containerStyle={{
-                  flex: 1,
-                  height: hp(6.2),
-                  borderRadius: theme.radius.xxl,
-                }}
-                onChangeText={(value) => (commentRef.current = value)}
+          {/* Comment Input with modern styling */}
+          <View style={styles.inputContainer}>
+            <Input
+              inputRef={inputRef}
+              style={styles.input}
+              placeholder="Type comment..."
+              placeholderTextColor="#888"
+              containerStyle={styles.inputWrapper}
+              onChangeText={(value) => (commentRef.current = value)}
+            />
+            {loading ? (
+              <View style={styles.loading}>
+                <Loading size="small" color={theme.colors.primary} />
+              </View>
+            ) : (
+              <TouchableOpacity 
+                style={styles.sendButton} 
+                onPress={onNewComment}
+                activeOpacity={0.7}
+              >
+                <Icon name="send" size={hp(2.8)} color={theme.colors.primary} />
+              </TouchableOpacity>
+            )}
+          </View>
+
+          {/* Comments section with divider */}
+          <Text style={styles.commentsTitle}>COMMENTS</Text>
+          <View style={styles.divider} />
+
+          {/* Comments list with animated appearance */}
+          <View style={styles.commentsList}>
+            {post?.comments?.map((comment) => (
+              <CommentItem
+                key={comment?.id?.toString()}
+                item={comment}
+                onDelete={onDeleteComment}
+                canDelete={user.id === comment.userId || user.id === post.userId}
               />
-
-              {loading ? (
-                <View style={styles.loading}>
-                  <Loading size="small" />
-                </View>
-              ) : (
-                <TouchableOpacity style={styles.sendIcon} onPress={onNewComment}>
-                  <Icon name="send" color={theme.colors.grey} />
-                </TouchableOpacity>
-              )}
-            </View>
-
-            {/* Comments list */}
-            <View style={{ marginVertical: 15, gap: 17 }}>
-              {post?.comments?.map((comment) => (
-                <CommentItem
-                  key={comment?.id?.toString()}
-                  item={comment}
-                  onDelete={onDeleteComment}
-                  canDelete={user.id === comment.userId || user.id === post.userId}
-                />
-              ))}
-              {post?.comments?.length === 0 && (
-                <Text style={{ color: theme.colors.text, marginLeft: 5 }}>
-                  Be first to comment
-                </Text>
-              )}
-            </View>
-          </ScrollView>
-        </View>
-      </ScreenWrapper>
-    </ImageBackground>
+            ))}
+            {post?.comments?.length === 0 && (
+              <Text style={styles.noComments}>Be the first to comment</Text>
+            )}
+          </View>
+        </ScrollView>
+      </View>
+    </ScreenWrapper>
   );
 };
 
@@ -219,39 +227,86 @@ export default PostDetails;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    marginBottom: 30,
-    paddingVertical: wp(4),
-    gap: 15,
+    paddingTop: hp(1),
   },
   list: {
     paddingHorizontal: wp(4),
+    paddingBottom: hp(4),
   },
   center: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    color: theme.colors.text,
-    fontWeight: theme.fonts.medium,
+  },
+  postContainer: {
+    borderRadius: 16,
+    overflow: 'hidden',
+    marginBottom: hp(3),
+    backgroundColor: 'rgba(30, 30, 30, 0.7)',
+    borderWidth: 0.5,
+    borderColor: 'rgba(255,255,255,0.1)',
   },
   inputContainer: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 10,
+    marginBottom: hp(3),
+  },
+  inputWrapper: {
+    flex: 1,
+    height: hp(6.5),
+    borderRadius: 30,
+    backgroundColor: '#1a1a1a',
+    borderWidth: 1,
+    borderColor: '#333',
+    paddingHorizontal: wp(4),
   },
   input: {
-    color: theme.colors.text,
-    marginLeft: 10,
-    flex: 1,
+    color: '#fff',
+    fontSize: hp(1.9),
+  },
+  sendButton: {
+    marginLeft: wp(2),
+    width: hp(6.5),
+    height: hp(6.5),
+    borderRadius: hp(3.25),
+    backgroundColor: '#1a1a1a',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#333',
   },
   loading: {
-    justifyContent: "center",
-    alignItems: "center",
+    marginLeft: wp(2),
+    width: hp(6.5),
+    height: hp(6.5),
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  sendIcon: {
-    padding: 10,
+  commentsTitle: {
+    color: '#888',
+    fontSize: hp(1.8),
+    fontWeight: '600',
+    letterSpacing: 1,
+    marginBottom: hp(1),
+  },
+  divider: {
+    height: 1,
+    backgroundColor: '#333',
+    marginBottom: hp(2),
+  },
+  commentsList: {
+    gap: hp(2.5),
+  },
+  noComments: {
+    color: '#666',
+    fontSize: hp(1.9),
+    textAlign: 'center',
+    marginTop: hp(2),
+    fontStyle: 'italic',
   },
   notFound: {
-    color: theme.colors.text,
-    fontSize: 20,
+    color: '#fff',
+    fontSize: hp(2.2),
+    fontWeight: '500',
   },
 });

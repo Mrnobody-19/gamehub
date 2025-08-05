@@ -4,7 +4,6 @@ import {
   Text,
   View,
   Animated,
-  ImageBackground,
   FlatList,
   ScrollView,
   TouchableOpacity,
@@ -38,7 +37,6 @@ const Home = () => {
   const postChannel = useRef(null);
 
   useEffect(() => {
-    // Fetch all users for the profile cards
     const loadUsers = async () => {
       const res = await fetchAllUsers();
       if (res.success) {
@@ -46,15 +44,10 @@ const Home = () => {
       }
     };
     loadUsers();
-
-    // Initial posts load
     loadInitialPosts();
-
-    // Set up real-time subscription
     setupRealtimeSubscription();
 
     return () => {
-      // Clean up subscription when component unmounts
       if (postChannel.current) {
         supabase.removeChannel(postChannel.current);
       }
@@ -139,134 +132,144 @@ const Home = () => {
   );
 
   return (
-    <ImageBackground
-      source={require("../../assets/images/white.jpg")}
-      style={styles.backgroundImage}
-    >
-      <ScreenWrapper bg="transparent">
-        <View style={styles.container}>
-          <FlatList
-            data={posts}
-            ListHeaderComponent={
-              <View style={styles.usersContainer}>
-                <Text style={styles.sectionTitle}>Connect With Others</Text>
-                <ScrollView 
-                  horizontal 
-                  showsHorizontalScrollIndicator={false}
-                  contentContainerStyle={styles.usersScroll}
-                >
-                  {users.map((user) => (
-                    <TouchableOpacity 
-                      key={user.id} 
-                      style={styles.userCard}
-                      onPress={() => router.push({ pathname: "profile", params: { userId: user.id } })}
-                    >
+    <ScreenWrapper bg="black">
+      <View style={styles.container}>
+        <FlatList
+          data={posts}
+          ListHeaderComponent={
+            <View style={styles.usersContainer}>
+              <Text style={styles.sectionTitle}>Connect With Others</Text>
+              <ScrollView 
+                horizontal 
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.usersScroll}
+              >
+                {users.map((user) => (
+                  <TouchableOpacity 
+                    key={user.id} 
+                    style={styles.userCard}
+                    onPress={() => router.push({ pathname: "profile", params: { userId: user.id } })}
+                  >
+                    <View style={styles.userAvatarContainer}>
                       <Avatar
                         uri={user.image}
-                        size={hp(8)}
-                        rounded={theme.radius.xl}
+                        size={hp(7)}
+                        rounded={hp(7)/2}
                         style={styles.userAvatar}
                       />
-                      <Text style={styles.userName} numberOfLines={1}>
-                        {user.name}
-                      </Text>
-                      <Text style={styles.userHandle} numberOfLines={1}>
-                        @{user.username || user.name.toLowerCase().replace(/\s/g, '')}
-                      </Text>
-                      <TouchableOpacity 
-                        style={styles.followButton}
-                        onPress={() => console.log("Follow", user.id)}
-                      >
-                        <Text style={styles.followButtonText}>Follow</Text>
-                      </TouchableOpacity>
+                    </View>
+                    <Text style={styles.userName} numberOfLines={1}>
+                      {user.name}
+                    </Text>
+                    <Text style={styles.userHandle} numberOfLines={1}>
+                      @{user.username || user.name.toLowerCase().replace(/\s/g, '')}
+                    </Text>
+                    <TouchableOpacity 
+                      style={styles.followButton}
+                      onPress={() => console.log("Follow", user.id)}
+                    >
+                      <Text style={styles.followButtonText}>Follow</Text>
                     </TouchableOpacity>
-                  ))}
-                </ScrollView>
-              </View>
-            }
-            showsVerticalScrollIndicator={false}
-            contentContainerStyle={styles.listStyle}
-            keyExtractor={(item) => item.id.toString()}
-            renderItem={({ item }) => (
-              <PostCard item={item} currentUser={user} router={router} />
-            )}
-            onEndReached={getPosts}
-            onEndReachedThreshold={0.5}
-            ListFooterComponent={
-              hasMore ? (
-                <View style={{ marginVertical: posts.length === 0 ? 200 : 30 }}>
-                  <Loading />
-                </View>
-              ) : (
-                <View style={{ marginVertical: 30 }}>
-                  <Text style={styles.noPosts}>No more posts</Text>
-                </View>
-              )
-            }
-            onScroll={handleScroll}
-            scrollEventThrottle={16}
-          />
-
-          {headerVisible && (
-            <View style={styles.bottomBar}>
-              <Pressable onPress={() => router.push("home")}>
-                <Icon
-                  name="home"
-                  size={hp(3.2)}
-                  strokeWidth={2}
-                  color={theme.colors.text}
-                />
-              </Pressable>
-              <Pressable onPress={() => router.push("notifications")}>
-                <Icon
-                  name="heart"
-                  size={hp(3.2)}
-                  strokeWidth={2}
-                  color={theme.colors.text}
-                />
-              </Pressable>
-              <Pressable onPress={() => router.push("newPost")}>
-                <Icon
-                  name="plus"
-                  size={hp(3.2)}
-                  strokeWidth={2}
-                  color={theme.colors.text}
-                />
-              </Pressable>
-              <Pressable onPress={() => router.push("home")}>
-                <Icon
-                  name="location"
-                  size={hp(3.2)}
-                  strokeWidth={2}
-                  color={theme.colors.text}
-                />
-              </Pressable>
-              <Pressable onPress={() => router.push("profile")}>
-                <Avatar
-                  uri={user?.image}
-                  size={hp(4.3)}
-                  rounded={theme.radius.sm}
-                  style={{ borderWidth: 2 }}
-                />
-              </Pressable>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
             </View>
+          }
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.listStyle}
+          keyExtractor={(item) => item.id.toString()}
+          renderItem={({ item }) => (
+            <PostCard item={item} currentUser={user} router={router} />
           )}
-        </View>
-      </ScreenWrapper>
-    </ImageBackground>
+          onEndReached={getPosts}
+          onEndReachedThreshold={0.5}
+          ListFooterComponent={
+            hasMore ? (
+              <View style={{ marginVertical: posts.length === 0 ? 200 : 30 }}>
+                <Loading />
+              </View>
+            ) : (
+              <View style={{ marginVertical: 30 }}>
+                <Text style={styles.noPosts}>No more posts</Text>
+              </View>
+            )
+          }
+          onScroll={handleScroll}
+          scrollEventThrottle={16}
+        />
+
+        {headerVisible && (
+          <View style={styles.bottomBar}>
+            <Pressable 
+              onPress={() => router.push("home")}
+              style={styles.bottomBarButton}
+            >
+              <Icon
+                name="home"
+                size={hp(3.2)}
+                strokeWidth={2}
+                color="white"
+              />
+            </Pressable>
+            <Pressable 
+              onPress={() => router.push("notifications")}
+              style={styles.bottomBarButton}
+            >
+              <Icon
+                name="heart"
+                size={hp(3.2)}
+                strokeWidth={2}
+                color="white"
+              />
+            </Pressable>
+            <Pressable 
+              onPress={() => router.push("newPost")}
+              style={styles.bottomBarButton}
+            >
+              <Icon
+                name="plus"
+                size={hp(3.2)}
+                strokeWidth={2}
+                color="white"
+              />
+            </Pressable>
+            <Pressable 
+              onPress={() => router.push("home")}
+              style={styles.bottomBarButton}
+            >
+              <Icon
+                name="location"
+                size={hp(3.2)}
+                strokeWidth={2}
+                color="white"
+              />
+            </Pressable>
+            <Pressable 
+              onPress={() => router.push("profile")}
+              style={styles.bottomBarButton}
+            >
+              <Avatar
+                uri={user?.image}
+                size={hp(4)}
+                rounded={hp(4)/2}
+                style={{ borderWidth: 2, borderColor: theme.colors.primary }}
+              />
+            </Pressable>
+          </View>
+        )}
+      </View>
+    </ScreenWrapper>
   );
 };
 
 const styles = StyleSheet.create({
-  backgroundImage: {
-    flex: 1,
-    resizeMode: "cover",
-  },
   container: {
     flex: 1,
+    backgroundColor: "#000"
   },
   usersContainer: {
     paddingBottom: hp(2),
+    backgroundColor: "#000",
   },
   sectionTitle: {
     fontSize: hp(2.5),
@@ -274,7 +277,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: wp(4),
     paddingTop: hp(2),
     paddingBottom: hp(1.5),
-    color: theme.colors.text,
+    color: "white",
   },
   usersScroll: {
     paddingHorizontal: wp(4),
@@ -283,19 +286,21 @@ const styles = StyleSheet.create({
     width: wp(30),
     marginRight: wp(4),
     alignItems: 'center',
-    backgroundColor: 'white',
+    backgroundColor: '#1a1a1a',
     borderRadius: theme.radius.lg,
     padding: wp(3),
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    borderWidth: 1,
+    borderColor: '#333',
+  },
+  userAvatarContainer: {
+    backgroundColor: '#333',
+    borderRadius: hp(7)/2,
+    padding: 2,
+    marginBottom: hp(1),
   },
   userAvatar: {
     borderWidth: 2,
     borderColor: theme.colors.primary,
-    marginBottom: hp(1),
   },
   userName: {
     fontSize: hp(1.9),
@@ -303,10 +308,11 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: hp(0.5),
     maxWidth: '100%',
+    color: 'white',
   },
   userHandle: {
     fontSize: hp(1.6),
-    color: theme.colors.textlight,
+    color: '#aaa',
     textAlign: 'center',
     marginBottom: hp(1),
     maxWidth: '100%',
@@ -326,11 +332,13 @@ const styles = StyleSheet.create({
   },
   listStyle: {
     paddingBottom: 80,
+    backgroundColor: "#000",
   },
   noPosts: {
     fontSize: hp(2),
     textAlign: "center",
-    color: theme.colors.text,
+    color: "#666",
+    fontStyle: 'italic'
   },
   bottomBar: {
     position: "absolute",
@@ -340,10 +348,14 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-around",
     alignItems: "center",
-    paddingVertical: 10,
-    backgroundColor: "rgba(255,255,255,0.95)",
+    paddingVertical: 2,
+    backgroundColor: "#111",
     borderTopWidth: 1,
-    borderColor: "#ddd",
+    borderColor: "#222",
+  },
+  bottomBarButton: {
+    padding: 8,
+    borderRadius: 20,
   },
 });
 
