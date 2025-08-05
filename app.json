@@ -13,7 +13,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/bg 3.jpg",
+        "foregroundImage": "./assets/images/defaultUser.jpg",
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true
