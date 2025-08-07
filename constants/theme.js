@@ -2,7 +2,7 @@ export const theme = {
     colors: {
         primary: '#F77737',       // Vibrant Green for primary actions
         primaryDark: '#008B42',   // Darker shade of primary for hover or active states
-        dark: 'white',   
+        dark: 'black',   
         darks: 'white',       // Dark Gray for backgrounds or text
         darklight: '#080707ff',     // Lighter Dark Gray for secondary backgrounds
 

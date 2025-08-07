@@ -1,4 +1,4 @@
-import { StyleSheet, Text, View, Pressable, Alert, ImageBackground } from 'react-native';
+import { StyleSheet, Text, View, Pressable, Alert } from 'react-native';
 import React, { useState, useRef } from 'react';
 import ScreenWrapper from '../components/ScreenWrapper';
 import { theme } from '../constants/theme';
@@ -10,7 +10,6 @@ import Icon from '../assets/icons';
 import Input from '../components/Input';
 import Button from '../components/Button';
 import { supabase } from '../lib/supabase';
-
 
 const Login = () => {
   const router = useRouter();
@@ -35,96 +34,143 @@ const Login = () => {
     if (error) {
       Alert.alert('Login Failed', error.message);
     } else {
-      // Navigate directly to home.jsx without showing alert
-      router.replace('/home'); // Changed from '/app/(main)/home.jsx' to '/home'
+      router.replace('/home');
     }
   };
 
   return (
+    <ScreenWrapper bg="transparent">
+      <StatusBar style="light" />
+      <View style={styles.backgroundOverlay} />
+      <View style={styles.container}>
+        <BackButton router={router} />
 
-      <ScreenWrapper bg="transparent">
-        <StatusBar style="dark" />
-        <View style={styles.container}>
-          <BackButton router={router} />
-
-          <View>
-            <Text style={styles.welcomeText}>Hey,</Text>
-            <Text style={styles.welcomeText}>Welcome Back</Text>
-          </View>
-
-          <View style={styles.form}>
-            <Text style={{ fontSize: hp(2.5), color: theme.colors.text }}>
-              Please Login To Continue
-            </Text>
-            <Input
-              style={styles.input}
-              icon={<Icon name="mail" size={26} strokewidth={1.6} />}
-              placeholder="Enter your Email"
-              placeholderTextColor="white"
-              onChangeText={(value) => { emailRef.current = value; }}
-            />
-            <Input
-              style={styles.input}
-              icon={<Icon name="lock" size={26} strokewidth={1.6} />}
-              placeholder="Enter your password"
-              placeholderTextColor="white"
-              secureTextEntry
-              onChangeText={(value) => { passwordRef.current = value; }}
-            />
-            <Text style={styles.forgetPassword}>Forgot Password?</Text>
-            <Button title={'Login'} loading={loading} onPress={onsubmit} />
-          </View>
-
-          <View style={styles.footer}>
-            <Text style={styles.footerText}>Don&apos;t have an account</Text>
-            <Pressable onPress={() => router.push('signUp')}>
-              <Text style={[styles.footerText, { color: theme.colors.primary, fontWeight: theme.fonts.semibold }]}>
-                SignUp
-              </Text>
-            </Pressable>
-          </View>
+        <View style={styles.header}>
+           <Text style={styles.welcomeText}>Welcome</Text>
+          <Text style={[styles.welcomeText, styles.accentText]}>back</Text>
         </View>
-      </ScreenWrapper>
+
+        <View style={styles.form}>
+          <Text style={styles.subtitle}>Please Login To Continue</Text>
+          <Input
+            style={styles.input}
+            icon={<Icon name="mail" size={26} color={theme.colors.primary} strokewidth={1.6} />}
+            placeholder="Enter your Email"
+            placeholderTextColor="#888"
+            onChangeText={(value) => { emailRef.current = value; }}
+          />
+          <Input
+            style={styles.input}
+            icon={<Icon name="lock" size={26} color={theme.colors.primary} strokewidth={1.6} />}
+            placeholder="Enter your password"
+            placeholderTextColor="#888"
+            secureTextEntry
+            onChangeText={(value) => { passwordRef.current = value; }}
+          />
+          <Pressable onPress={() => {}}>
+            <Text style={styles.forgetPassword}>Forgot Password?</Text>
+          </Pressable>
+          <Button 
+            title={'Login'} 
+            loading={loading} 
+            onPress={onsubmit}
+            buttonStyle={styles.loginButton}
+          />
+        </View>
+
+        <View style={styles.footer}>
+          <Text style={styles.footerText}>Don&apos;t have an account?</Text>
+          <Pressable 
+            onPress={() => router.push('signUp')}
+            style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}
+          >
+            <Text style={styles.signUpText}>Sign Up</Text>
+          </Pressable>
+        </View>
+      </View>
+    </ScreenWrapper>
   );
 };
 
 export default Login;
 
 const styles = StyleSheet.create({
-
-  container: {
-    backgroundColor: "black",
-    flex: 1,
-    gap: 45,
-    paddingHorizontal: wp(4),
+  backgroundOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: '#000',
   },
+  container: {
+    flex: 1,
+    paddingHorizontal: wp(6),
+    paddingVertical: hp(4),
+  },
+  header: {
+    marginTop: hp(8),
+    marginBottom: hp(4),
+  },
+  accentText: {
+        color: theme.colors.primary
+    },
   welcomeText: {
-    fontSize: hp(5),
-    fontWeight: theme.fonts.text,
-    color: theme.colors.text,
+    fontSize: hp(5.5),
+    fontWeight: '800',
+    color: '#fff',
+    letterSpacing: 0.5,
+    textShadowColor: 'rgba(255, 255, 255, 0.2)',
+    textShadowOffset: { width: 0, height: 0 },
+    textShadowRadius: 10,
+  },
+  subtitle: {
+    fontSize: hp(2.3),
+    color: '#fff',
+ 
+    marginBottom: hp(3),
+    letterSpacing: 0.5,
   },
   form: {
-    gap: 25,
+    gap: hp(3),
+    marginBottom: hp(4),
+  },
+  input: {
+    color: '#fff',
+    paddingLeft: wp(3),
+    flex: 1,
+    fontSize: hp(2),
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 12,
+    paddingVertical: hp(1.8),
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
   },
   forgetPassword: {
     textAlign: 'right',
-    fontWeight: theme.fonts.semibold,
-    color: theme.colors.text,
+    fontWeight: '600',
+    color: theme.colors.primary,
+    fontSize: hp(1.8),
+  },
+  loginButton: {
+    backgroundColor: theme.colors.primary,
+    borderRadius: 12,
+    paddingVertical: hp(2),
+    shadowColor: theme.colors.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.4,
+    shadowRadius: 10,
   },
   footer: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    gap: 5,
+    gap: wp(2),
+    marginTop: hp(2),
   },
   footerText: {
-    textAlign: 'center',
-    color: theme.colors.text,
-    fontSize: hp(2.6),
+    fontSize: hp(2.5),
+    color: '#fff',
   },
-  input: {
-    color: theme.colors.text,
-    marginLeft: 10,
-    flex: 1,
+  signUpText: {
+    color: theme.colors.primary,
+    fontSize: hp(2.5),
+    fontWeight: '700',
   },
 });

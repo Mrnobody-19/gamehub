@@ -260,7 +260,7 @@ const styles = StyleSheet.create({
   username: {
     fontSize: hp(2.3),
     fontWeight: '600',
-    color: theme.colors.dark,
+    color: "black",
   },
   time: {
     fontSize: hp(1.6),

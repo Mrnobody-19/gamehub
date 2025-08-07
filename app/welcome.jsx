@@ -1,4 +1,4 @@
-import { Image, Pressable, StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 import React from "react";
 import ScreenWrapper from "../components/ScreenWrapper";
 import { hp, wp } from "../helpers/common";
@@ -11,35 +11,37 @@ const Welcome = () => {
   const router = useRouter();
 
   return (
-    <ScreenWrapper>
+    <ScreenWrapper transparent>
+      <View style={styles.backgroundOverlay} />
       <View style={styles.container}>
-        <StatusBar style="dark" />
+        <StatusBar style="light" />
         <View style={styles.content}>
-          <Image
-            style={styles.welcomeImage} 
-            resizeMode="contain"
-          />
-          <View style={{ gap: 20 }}>
-            <Text style={styles.title}>Vibexa!</Text>
-            <Text style={styles.punchline}>
-              &quot;Where Connection Ignites&quot;
-            </Text>
+          {/* Gradient circles in background */}
+          <View style={[styles.circle, styles.circle1]} />
+          <View style={[styles.circle, styles.circle2]} />
+          
+          {/* Main content */}
+          <View style={styles.textContainer}>
+            <Text style={styles.title}>VIBEXA</Text>
+            <View style={styles.titleUnderline} />
+            <Text style={styles.subtitle}>Where Connection Ignites</Text>
           </View>
 
           <View style={styles.footer}>
             <Button
-              title="Getting Started"
-              buttonStyle={{ marginHorizontal: wp(3) }}
+              title="Get Started"
+              buttonStyle={styles.primaryButton}
+              textStyle={styles.buttonText}
               onPress={() => router.push("signUp")}
             />
-            <View style={styles.bottomTextContainer}>
-              <Text style={styles.loginText}>
-                Already have an account!
-              </Text>
-              <Pressable onPress={() => router.push('login')}>
-                <Text style={[styles.loginText, { color: theme.colors.primary, fontWeight: theme.fonts.semibold }]}>
-                  Login
-                </Text>
+            
+            <View style={styles.loginContainer}>
+              <Text style={styles.loginText}>Already have an account?</Text>
+              <Pressable 
+                onPress={() => router.push('login')}
+                style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}
+              >
+                <Text style={styles.loginLink}>Sign In</Text>
               </Pressable>
             </View>
           </View>
@@ -52,53 +54,100 @@ const Welcome = () => {
 export default Welcome;
 
 const styles = StyleSheet.create({
+  backgroundOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: '#000',
+  },
   container: {
     flex: 1,
-    backgroundColor: "black", // Replace with your preferred color
   },
   content: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'space-around',
-    paddingHorizontal: 4,
+    paddingHorizontal: wp(8),
+    paddingVertical: hp(8),
+    justifyContent: 'space-between',
   },
-  welcomeImage: {
-    height: hp(30),
+  // Background elements
+  circle: {
+    position: 'absolute',
+    borderRadius: 500,
+    opacity: 0.15,
+  },
+  circle1: {
+    width: wp(120),
+    height: wp(120),
+    backgroundColor: theme.colors.primary,
+    top: -wp(40),
+    right: -wp(60),
+  },
+  circle2: {
     width: wp(100),
-    alignSelf: 'center',
+    height: wp(100),
+    backgroundColor: '#6a0dad',
+    bottom: -wp(30),
+    left: -wp(40),
+  },
+  // Text content
+  textContainer: {
+    marginTop: hp(15),
+    alignItems: 'center',
   },
   title: {
-    color: theme.colors.dark,
-    fontSize: hp(9),
-    textAlign: "center",
-    fontWeight: theme.fonts.extrabold,
-    fontStyle: 'italic',
-    textShadowColor: 'rgba(255, 0, 255, 0.7)',
+    color: '#fff',
+    fontSize: hp(8.5),
+    fontWeight: '900',
+    letterSpacing: 2,
+    textTransform: 'uppercase',
+    marginBottom: hp(1),
+    textShadowColor: 'rgba(255, 255, 255, 0.2)',
     textShadowOffset: { width: 0, height: 0 },
     textShadowRadius: 10,
   },
-  punchline: {
-    textAlign: 'center',
-    paddingHorizontal: wp(10),
+  titleUnderline: {
+
+  },
+  subtitle: {
+    color: 'rgba(255, 255, 255, 0.8)',
     fontSize: hp(2.7),
-    color: theme.colors.text,
-    textShadowColor: 'rgba(255, 255, 255, 0.5)',
-    textShadowOffset: { width: 0, height: 0 },
-    textShadowRadius: 5,
+    letterSpacing: 1.2,
+    textAlign: 'center',
+    lineHeight: hp(3.5),
+    maxWidth: wp(80),
   },
+  // Footer
   footer: {
-    gap: 30,
-    width: '100%',
+    marginBottom: hp(8),
   },
-  bottomTextContainer: {
+  primaryButton: {
+    backgroundColor: '',
+    borderWidth: 1,
+    borderColor: theme.colors.primary,
+    borderRadius: 30,
+    paddingVertical: hp(2.2),
+    marginBottom: hp(4),
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.4,
+    shadowRadius: 10,
+  },
+  buttonText: {
+    color: '#fff',
+    fontSize: hp(2.3),
+    fontWeight: '600',
+    letterSpacing: 0.8,
+  },
+  loginContainer: {
     flexDirection: 'row',
     justifyContent: 'center',
-    alignItems: 'center',
-    gap: 5,
+    gap: wp(2),
   },
   loginText: {
-    textAlign: 'center',
-    color: theme.colors.text,
-    fontSize: hp(2.6),
+    color: 'rgba(255, 255, 255, 0.7)',
+    fontSize: hp(2.1),
+  },
+  loginLink: {
+    color: theme.colors.primary,
+    fontSize: hp(2.1),
+    fontWeight: '700',
+    textDecorationLine: 'underline',
   },
 });

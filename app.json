@@ -4,20 +4,24 @@
     "slug": "vibe-exchange",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/vibexa.png",
+    "icon": "./assets/images/vibexa2.png",
     "scheme": "vibexa",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "runtimeVersion": {
+        "policy": "appVersion"
+      }
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/vibexa.png",
+        "foregroundImage": "./assets/images/vibexa2.png",
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.mrnoone.vibeexchange"
+      "package": "com.mrnoone.vibeexchange",
+      "runtimeVersion": "1.0.0"
     },
     "web": {
       "bundler": "metro",
@@ -40,11 +44,15 @@
     "experiments": {
       "typedRoutes": true
     },
+    "updates": {
+      "url": "https://u.expo.dev/dcb9488a-13b4-4e3a-acaf-b62fd1570077"
+    },
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "dcb9488a-13b4-4e3a-acaf-b62fd1570077"
+        "projectId": "09ffee5b-2714-4648-886c-6e4b85964e2e"
       }
-    }
+    },
+    "owner": "mrnoone"
   }
 }

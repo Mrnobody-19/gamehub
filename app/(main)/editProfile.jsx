@@ -1,4 +1,12 @@
-import { Alert, ScrollView, StyleSheet, Text, View } from 'react-native'
+import { 
+  Alert, 
+  ScrollView, 
+  StyleSheet, 
+  Text, 
+  View, 
+  Pressable,
+  ActivityIndicator 
+} from 'react-native'
 import React, { useEffect, useState } from 'react'
 import ScreenWrapper from '../../components/ScreenWrapper'
 import Header from '../../components/Header'
@@ -7,7 +15,6 @@ import { theme } from '../../constants/theme'
 import { Image } from 'expo-image'
 import { getUserImageSrc, uploadFile } from '../../services/imageService'
 import { useAuth } from '../../contexts/AuthContext'
-import { Pressable } from 'react-native'
 import Icon from '../../assets/icons'
 import Input from '../../components/Input'
 import Button from '../../components/Button'
@@ -18,6 +25,7 @@ import * as ImagePicker from 'expo-image-picker'
 const EditProfile = () => {
     const { user: currentUser, setUserData } = useAuth();
     const [loading, setLoading] = useState(false);
+    const [imageUploading, setImageUploading] = useState(false);
     const router = useRouter();
 
     const [user, setUser] = useState({
@@ -29,6 +37,7 @@ const EditProfile = () => {
     })
 
     useEffect(() => {
+        console.log('Current user in context:', currentUser);
         if (currentUser) {
             setUser({
                 name: currentUser.name || '',
@@ -41,43 +50,85 @@ const EditProfile = () => {
     }, [currentUser])
 
     const onPickImage = async () => {
-        let result = await ImagePicker.launchImageLibraryAsync({
-            mediaTypes: ImagePicker.MediaTypeOptions.Images,
-            allowsEditing: true,
-            aspect: [4, 3],
-            quality: 0.7,
-        });
+        try {
+            let result = await ImagePicker.launchImageLibraryAsync({
+                mediaTypes: ImagePicker.MediaTypeOptions.Images,
+                allowsEditing: true,
+                aspect: [4, 3],
+                quality: 0.7,
+            });
 
-        if (!result.canceled) {
-            setUser({ ...user, image: result.assets[0] });
+            if (!result.canceled) {
+                setUser({ ...user, image: result.assets[0] });
+            }
+        } catch (error) {
+            console.error('Image picker error:', error);
+            Alert.alert('Error', 'Failed to pick image');
         }
     }
 
     const onSubmit = async () => {
-        let userData = { ...user };
-        let { name, phoneNumber, address, image, bio } = userData;
-        if (!name || !phoneNumber || !address || !bio || !image) {
-            Alert.alert('Profile', "Please fill all the fields");
-            return;
-        }
-        setLoading(true);
+        try {
+            const userData = {
+                name: user.name.toString().trim(),
+                phoneNumber: user.phoneNumber.toString().trim(),
+                address: user.address.toString().trim(),
+                bio: user.bio.toString().trim(),
+                image: user.image
+            };
+            
+            console.log('Submitting with data:', userData);
+            
+            if (!userData.name || !userData.phoneNumber || !userData.address || !userData.bio || !userData.image) {
+                Alert.alert('Profile', "Please fill all the fields");
+                return;
+            }
+            
+            setLoading(true);
 
-        if (typeof image == 'object') {
-            let imageRes = await uploadFile('profiles', image?.uri, true);
-            if (imageRes.success) userData.image = imageRes.data;
-            else userData.image = null;
-        }
+            // Handle image upload if it's a new image (object)
+            if (typeof userData.image == 'object') {
+                setImageUploading(true);
+                console.log('Uploading new image...');
+                let imageRes = await uploadFile('profiles', userData.image?.uri, true);
+                
+                if (imageRes.success) {
+                    console.log('Image upload success:', imageRes.data);
+                    userData.image = imageRes.data;
+                } else {
+                    throw new Error(imageRes.message || 'Image upload failed');
+                }
+                setImageUploading(false);
+            }
 
-        const res = await updateUser(currentUser?.id, userData);
-        setLoading(false);
-
-        if (res.success) {
-            setUserData({ ...currentUser, ...userData });
-            router.back();
+            console.log('Updating user with data:', userData);
+            const res = await updateUser(currentUser?.id, userData);
+            
+            console.log('Update response:', res);
+            
+            if (res.success) {
+                console.log('Updating context with:', res.data);
+                setUserData(res.data); // Assuming backend returns updated user
+                
+                // Small delay to ensure state updates before navigation
+                setTimeout(() => {
+                    router.back();
+                }, 100);
+            } else {
+                throw new Error(res.message || 'Failed to update profile');
+            }
+        } catch (error) {
+            console.error('Update error:', error);
+            Alert.alert('Error', error.message || 'An unexpected error occurred');
+        } finally {
+            setLoading(false);
+            setImageUploading(false);
         }
     }
 
-    let imageSource = user.image && typeof user.image == 'object' ? user.image.uri : getUserImageSrc(user.image);
+    let imageSource = user.image 
+        ? (typeof user.image == 'object' ? user.image.uri : getUserImageSrc(user.image))
+        : require('../../assets/images/defaultUser.jpg');
 
     return (
         <ScreenWrapper bg="#000">
@@ -90,9 +141,26 @@ const EditProfile = () => {
                             <Image 
                                 source={imageSource} 
                                 style={styles.avatar}
+                                contentFit="cover"
                             />
-                            <Pressable style={styles.cameraButton} onPress={onPickImage}>
-                                <Icon name="camera" size={20} strokeWidth={2.5} color="white" />
+                            <Pressable 
+                                style={styles.cameraButton} 
+                                onPress={onPickImage}
+                                disabled={imageUploading}
+                            >
+                                <Icon 
+                                    name="camera" 
+                                    size={20} 
+                                    strokeWidth={2.5} 
+                                    color="white" 
+                                />
+                                {imageUploading && (
+                                    <ActivityIndicator 
+                                        size="small" 
+                                        color="white" 
+                                        style={styles.uploadIndicator}
+                                    />
+                                )}
                             </Pressable>
                         </View>
 
@@ -114,6 +182,7 @@ const EditProfile = () => {
                             placeholderTextColor="#666"
                             value={user.phoneNumber}
                             onChangeText={value => setUser({ ...user, phoneNumber: value })}
+                            keyboardType="phone-pad"
                             style={styles.input}
                         />
                         <Input
@@ -129,6 +198,7 @@ const EditProfile = () => {
                             placeholderTextColor="#666"
                             value={user.bio}
                             multiline={true}
+                            numberOfLines={4}
                             containerStyle={styles.bioInput}
                             style={styles.bioText}
                             onChangeText={value => setUser({ ...user, bio: value })}
@@ -138,7 +208,8 @@ const EditProfile = () => {
                             title="Update Profile" 
                             loading={loading} 
                             onPress={onSubmit}
-                            ButtonStyle={styles.submitButton}
+                            buttonStyle={styles.submitButton}
+                            disabled={loading || imageUploading}
                         />
                     </View>
                 </ScrollView>
@@ -189,16 +260,20 @@ const styles = StyleSheet.create({
         shadowRadius: 5,
         elevation: 7,
     },
+    uploadIndicator: {
+        position: 'absolute',
+        top: 10,
+        right: 10,
+    },
     formDescription: {
         fontSize: hp(1.8),
-        color: '#aaa',
         textAlign: 'center',
         marginBottom: 10,
     },
     input: {
         backgroundColor: '#1a1a1a',
         borderWidth: 1,
-        borderColor: '#333',
+        
         borderRadius: 12,
         paddingVertical: 15,
         paddingHorizontal: 20,
