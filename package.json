@@ -18,7 +18,7 @@
     "@react-navigation/native": "^7.1.6",
     "@supabase/supabase-js": "^2.53.0",
     "base64-arraybuffer": "^1.0.2",
-    "expo": "~53.0.20",
+    "expo": "^53.0.20",
     "expo-av": "^15.1.7",
     "expo-blur": "~14.1.5",
     "expo-constants": "~17.1.7",
@@ -54,10 +54,27 @@
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",
+    "@expo/cli": "^0.24.20",
     "@types/react": "~19.0.10",
     "eslint": "^9.25.0",
     "eslint-config-expo": "~9.2.0",
+    "expo-cli": "^6.3.10",
     "typescript": "~5.8.3"
   },
-  "private": true
+  "private": true,
+  "description": "This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).",
+  "directories": {
+    "lib": "lib"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Mrnobody-19/gamehub.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Mrnobody-19/gamehub/issues"
+  },
+  "homepage": "https://github.com/Mrnobody-19/gamehub#readme"
 }

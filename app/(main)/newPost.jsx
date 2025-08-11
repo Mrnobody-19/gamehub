@@ -14,7 +14,7 @@ import {
 } from "react-native";
 import Icon from "../../assets/icons";
 import Avatar from "../../components/Avater";
-import Button from "../../components/Button";
+import Button from "../../components/Button"
 import Header from "../../components/Header";
 import RichTextEditor from "../../components/RichTextEditor";
 import ScreenWrapper from "../../components/ScreenWrapper";
@@ -197,7 +197,7 @@ const NewPost = () => {
           </View>
         </ScrollView>
 
-        {/* Post button */}
+
         <Button
           ButtonStyle={styles.postButton}
           title={post && post.id ? "Update" : "Post"}

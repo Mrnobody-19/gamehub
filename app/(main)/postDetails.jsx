@@ -90,7 +90,6 @@ const PostDetails = () => {
     setLoading(false);
     if (res.success) {
       if(user.id !== post.userId){
-        // send notification to post owner
         let notify = {
           senderId: user.id,
           receiverId: post.userId,
@@ -159,7 +158,7 @@ const PostDetails = () => {
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.list}
         >
-          {/* Post Card with glass morphism effect */}
+          {/* Post Card */}
           <View style={styles.postContainer}>
             <PostCard
               item={{ ...post, comments: [{ count: post.comments?.length }] }}
@@ -173,7 +172,7 @@ const PostDetails = () => {
             />
           </View>
 
-          {/* Comment Input with modern styling */}
+          {/* Comment Input */}
           <View style={styles.inputContainer}>
             <Input
               inputRef={inputRef}
@@ -198,11 +197,10 @@ const PostDetails = () => {
             )}
           </View>
 
-          {/* Comments section with divider */}
+          {/* Comments Section */}
           <Text style={styles.commentsTitle}>COMMENTS</Text>
           <View style={styles.divider} />
-
-          {/* Comments list with animated appearance */}
+          
           <View style={styles.commentsList}>
             {post?.comments?.map((comment) => (
               <CommentItem

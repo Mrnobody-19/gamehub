@@ -7,14 +7,14 @@ import Loading from '../components/Loading';
 const Index = () => {
   const router = useRouter();
 
-  // Optional: You can auto-redirect after a delay (e.g. splash screen)
+
   useEffect(() => {
     const timer = setTimeout(() => {
-      router.replace('/welcome'); // or '/home' if user is already signed in
-    }, 1500); // 1.5 seconds delay
+      router.replace('/welcome'); 
+    }, 1500);
 
     return () => clearTimeout(timer);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+
   }, []);
 
   return (

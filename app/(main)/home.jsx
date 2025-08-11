@@ -22,6 +22,7 @@ import { fetchPosts } from "../../services/postService";
 import PostCard from "../../components/PostCard";
 import Loading from "../../components/Loading";
 import { getUserData, fetchAllUsers } from "../../services/userServices";
+import { followUser, unfollowUser, checkIfFollowing } from "../../services/followServices";
 
 let limit = 0;
 
@@ -34,11 +35,11 @@ const HomeScreen = () => {
   const [hasMore, setHasMore] = useState(true);
   const [headerVisible, setHeaderVisible] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [followingStatus, setFollowingStatus] = useState({});
   const scrollY = useRef(new Animated.Value(0)).current;
   const lastOffset = useRef(0);
   const postChannel = useRef(null);
 
-  // Function to shuffle array randomly
   const shuffleArray = (array) => {
     const newArray = [...array];
     for (let i = newArray.length - 1; i > 0; i--) {
@@ -101,6 +102,19 @@ const HomeScreen = () => {
     }
   }, []);
 
+  const loadFollowStatuses = useCallback(async (usersList) => {
+    if (!user?.id) return;
+    
+    const statuses = {};
+    for (const userItem of usersList) {
+      const res = await checkIfFollowing(user.id, userItem.id);
+      if (res.success) {
+        statuses[userItem.id] = res.isFollowing;
+      }
+    }
+    setFollowingStatus(statuses);
+  }, [user?.id]);
+
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     try {
@@ -115,14 +129,16 @@ const HomeScreen = () => {
         setHasMore(postsRes.data.length >= 4);
       }
       if (usersRes.success) {
-        setUsers(usersRes.data.filter(u => u.id !== user?.id));
+        const otherUsers = usersRes.data.filter(u => u.id !== user?.id);
+        setUsers(otherUsers);
+        await loadFollowStatuses(otherUsers);
       }
     } catch (error) {
       console.error("Refresh error:", error);
     } finally {
       setRefreshing(false);
     }
-  }, [user?.id]);
+  }, [user?.id, loadFollowStatuses]);
 
   useEffect(() => {
     const loadData = async () => {
@@ -131,7 +147,9 @@ const HomeScreen = () => {
         fetchAllUsers()
       ]);
       if (usersRes.success) {
-        setUsers(usersRes.data.filter(u => u.id !== user?.id));
+        const otherUsers = usersRes.data.filter(u => u.id !== user?.id);
+        setUsers(otherUsers);
+        await loadFollowStatuses(otherUsers);
       }
       setupRealtimeSubscription();
     };
@@ -143,7 +161,7 @@ const HomeScreen = () => {
         supabase.removeChannel(postChannel.current);
       }
     };
-  }, [user?.id, loadInitialPosts, setupRealtimeSubscription]);
+  }, [user?.id, loadInitialPosts, setupRealtimeSubscription, loadFollowStatuses]);
 
   const getPosts = async () => {
     if (!hasMore) return;
@@ -174,6 +192,33 @@ const HomeScreen = () => {
       pathname: "/profile",
       params: { userId }
     });
+  };
+
+  const toggleFollow = async (userId) => {
+    if (!user?.id) return;
+    
+    const isFollowing = followingStatus[userId];
+    try {
+      // Optimistic update
+      setFollowingStatus(prev => ({
+        ...prev,
+        [userId]: !isFollowing
+      }));
+      
+      // Update in database
+      if (isFollowing) {
+        await unfollowUser(user.id, userId);
+      } else {
+        await followUser(user.id, userId);
+      }
+    } catch (error) {
+      console.error("Error toggling follow:", error);
+      // Revert optimistic update on error
+      setFollowingStatus(prev => ({
+        ...prev,
+        [userId]: isFollowing
+      }));
+    }
   };
 
   return (
@@ -219,13 +264,18 @@ const HomeScreen = () => {
                       @{userItem.username}
                     </Text>
                     <TouchableOpacity 
-                      style={styles.followButton}
+                      style={[
+                        styles.followButton,
+                        followingStatus[userItem.id] && styles.followingButton
+                      ]}
                       onPress={(e) => {
                         e.stopPropagation();
-                        console.log("Follow", userItem.id);
+                        toggleFollow(userItem.id);
                       }}
                     >
-                      <Text style={styles.followButtonText}>Follow</Text>
+                      <Text style={styles.followButtonText}>
+                        {followingStatus[userItem.id] ? "Following" : "Follow"}
+                      </Text>
                     </TouchableOpacity>
                   </TouchableOpacity>
                 ))}
@@ -376,6 +426,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     marginTop: 4,
   },
+  followingButton: {
+    backgroundColor: '#333',
+    borderWidth: 1,
+    borderColor: theme.colors.primary,
+  },
   followButtonText: {
     color: "white",
     fontWeight: "bold",
@@ -390,11 +445,11 @@ const styles = StyleSheet.create({
     fontSize: hp(2),
   },
   bottomBar: {
-    position: "absolute",
+    position: "fixed",
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: theme.colors.card,
+    backgroundColor: "black",
     flexDirection: "row",
     justifyContent: "space-around",
     alignItems: "center",

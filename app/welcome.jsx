@@ -16,11 +16,10 @@ const Welcome = () => {
       <View style={styles.container}>
         <StatusBar style="light" />
         <View style={styles.content}>
-          {/* Gradient circles in background */}
+        
           <View style={[styles.circle, styles.circle1]} />
           <View style={[styles.circle, styles.circle2]} />
-          
-          {/* Main content */}
+
           <View style={styles.textContainer}>
             <Text style={styles.title}>VIBEXA</Text>
             <View style={styles.titleUnderline} />
@@ -67,7 +66,7 @@ const styles = StyleSheet.create({
     paddingVertical: hp(8),
     justifyContent: 'space-between',
   },
-  // Background elements
+
   circle: {
     position: 'absolute',
     borderRadius: 500,
@@ -87,7 +86,7 @@ const styles = StyleSheet.create({
     bottom: -wp(30),
     left: -wp(40),
   },
-  // Text content
+
   textContainer: {
     marginTop: hp(15),
     alignItems: 'center',

@@ -5,7 +5,6 @@ import { AuthProvider, useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import { getUserData } from '../services/userServices';
 
-// Ignore noisy logs
 LogBox.ignoreAllLogs([
   'Warning: TNodeChildrenRenderer',
   'Warning: MemoizedTNodeRenderer',
@@ -37,7 +36,6 @@ const MainLayout = () => {
     });
 
     return () => listener?.subscription?.unsubscribe();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const updateUserData = async (user, email) => {

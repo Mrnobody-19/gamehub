@@ -86,7 +86,7 @@ const EditProfile = () => {
             
             setLoading(true);
 
-            // Handle image upload if it's a new image (object)
+            
             if (typeof userData.image == 'object') {
                 setImageUploading(true);
                 console.log('Uploading new image...');
@@ -108,9 +108,9 @@ const EditProfile = () => {
             
             if (res.success) {
                 console.log('Updating context with:', res.data);
-                setUserData(res.data); // Assuming backend returns updated user
+                setUserData(res.data); 
                 
-                // Small delay to ensure state updates before navigation
+                
                 setTimeout(() => {
                     router.back();
                 }, 100);
