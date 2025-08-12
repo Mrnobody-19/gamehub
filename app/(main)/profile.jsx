@@ -270,7 +270,7 @@ const UserHeader = ({
         </View>
 
         <Text style={styles.username}>{user?.name || 'Unknown User'}</Text>
-        <Text style={styles.userBio}>{user?.bio || 'Worker & Fashion Lover'}</Text>
+        <Text style={styles.userBio}>{user?.bio || 'Unknown User'}</Text>
 
         {!isCurrentUser && (
           <TouchableOpacity 

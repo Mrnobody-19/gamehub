@@ -32,13 +32,13 @@ export const unfollowUser = async (followerId, followingId) => {
   }
 };
 
-// services/followServices.js
+
 export const getFollowers = async (userId) => {
-  // Your implementation to get followers
+  
 };
 
 export const getFollowing = async (userId) => {
-  // Your implementation to get following
+  
 };
 
 export const checkIfFollowing = async (followerId, followingId) => {
