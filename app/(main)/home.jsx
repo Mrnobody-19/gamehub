@@ -237,11 +237,13 @@ const HomeScreen = () => {
           ListHeaderComponent={
             <View style={styles.usersContainer}>
               <Text style={styles.sectionTitle}>Connect With Others</Text>
+
               <ScrollView 
                 horizontal 
                 showsHorizontalScrollIndicator={false}
                 contentContainerStyle={styles.usersScroll}
               >
+                
                 {users.map((userItem) => (
                   <TouchableOpacity
                     key={userItem.id}

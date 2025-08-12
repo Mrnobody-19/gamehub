@@ -24,25 +24,39 @@ const FollowList = () => {
   const [loading, setLoading] = useState(true);
   const [users, setUsers] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState(null);
 
   const loadUsers = useCallback(async () => {
     try {
       setLoading(true);
-      let res;
+      setError(null);
       
+      let response;
       if (type === "followers") {
-        res = await getFollowers(userId || user?.id);
+        response = await getFollowers(userId || user?.id);
       } else {
-        res = await getFollowing(userId || user?.id);
+        response = await getFollowing(userId || user?.id);
       }
 
-      if (res.success) {
-        setUsers(res.data);
+      // Handle case where response is undefined
+      if (!response) {
+        throw new Error("No response from server");
+      }
+
+      // Handle both success/error response formats
+      const data = response.data || response;
+      
+      if (Array.isArray(data)) {
+        setUsers(data);
+      } else if (data?.error) {
+        throw new Error(data.error);
       } else {
-        console.error("Error loading users:", res.error);
+        throw new Error("Invalid data format received");
       }
     } catch (error) {
       console.error("Error in loadUsers:", error);
+      setError(error.message || "Failed to load users");
+      setUsers([]);
     } finally {
       setLoading(false);
     }
@@ -75,40 +89,52 @@ const FollowList = () => {
         showBackButton={true} 
       />
       
-      <FlatList
-        data={users}
-        contentContainerStyle={styles.listContainer}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-            colors={[theme.colors.primary]}
-            tintColor={theme.colors.primary}
-          />
-        }
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <TouchableOpacity 
-            style={styles.userContainer}
-            onPress={() => router.push(`/profile/${item.id}`)}
+      {error ? (
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>{error}</Text>
+          <TouchableOpacity
+            style={styles.retryButton}
+            onPress={loadUsers}
           >
-            <Avatar uri={item.image} size={hp(6)} rounded={hp(6)/2} />
-            <View style={styles.userInfo}>
-              <Text style={styles.username}>{item.name}</Text>
-              <Text style={styles.userBio}>{item.bio || "No bio"}</Text>
-            </View>
+            <Text style={styles.retryButtonText}>Retry</Text>
           </TouchableOpacity>
-        )}
-        ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>
-              {type === "followers" 
-                ? "No followers yet" 
-                : "Not following anyone"}
-            </Text>
-          </View>
-        }
-      />
+        </View>
+      ) : (
+        <FlatList
+          data={users}
+          contentContainerStyle={styles.listContainer}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              colors={[theme.colors.primary]}
+              tintColor={theme.colors.primary}
+            />
+          }
+          keyExtractor={(item) => item.id}
+          renderItem={({ item }) => (
+            <TouchableOpacity 
+              style={styles.userContainer}
+              onPress={() => router.push(`/profile/${item.id}`)}
+            >
+              <Avatar uri={item.image} size={hp(6)} rounded={hp(6)/2} />
+              <View style={styles.userInfo}>
+                <Text style={styles.username}>{item.name}</Text>
+                <Text style={styles.userBio}>{item.bio || "No bio"}</Text>
+              </View>
+            </TouchableOpacity>
+          )}
+          ListEmptyComponent={
+            <View style={styles.emptyContainer}>
+              <Text style={styles.emptyText}>
+                {type === "followers" 
+                  ? "No followers yet" 
+                  : "Not following anyone"}
+              </Text>
+            </View>
+          }
+        />
+      )}
     </ScreenWrapper>
   );
 };
@@ -155,6 +181,29 @@ const styles = StyleSheet.create({
     fontSize: hp(2),
     color: "#666",
     textAlign: "center",
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: wp(5),
+  },
+  errorText: {
+    color: theme.colors.error,
+    fontSize: hp(2),
+    marginBottom: hp(2),
+    textAlign: "center",
+  },
+  retryButton: {
+    backgroundColor: theme.colors.primary,
+    paddingHorizontal: wp(5),
+    paddingVertical: hp(1),
+    borderRadius: hp(1),
+  },
+  retryButtonText: {
+    color: "white",
+    fontSize: hp(1.8),
+    fontWeight: "bold",
   },
 });
 

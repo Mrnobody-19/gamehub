@@ -6,7 +6,6 @@ import ScreenWrapper from '../../components/ScreenWrapper';
 import NotificationItem from '../../components/NotificationItem';
 import { useRouter } from 'expo-router';
 import { hp, wp } from '../../helpers/common';
-import { theme } from '../../constants/theme';
 import Header from '../../components/Header';
 
 const Notifications = () => {
@@ -16,9 +15,16 @@ const Notifications = () => {
   const { user } = useAuth();
   const router = useRouter();
 
-  const getNotifications = useCallback(async () => {
+  const getNotifications = useCallback(async (isRefresh = false) => {
+    if (!user?.id) return; // prevent fetch before user loads
+
     try {
-      setRefreshing(true);
+      if (isRefresh) {
+        setRefreshing(true);
+      } else {
+        setLoading(true);
+      }
+
       const res = await fetchNotifications(user.id);
       if (res?.success) {
         setNotifications(res.data || []);
@@ -29,7 +35,7 @@ const Notifications = () => {
       setRefreshing(false);
       setLoading(false);
     }
-  }, [user.id]);
+  }, [user?.id]);
 
   useEffect(() => {
     getNotifications();
@@ -44,12 +50,12 @@ const Notifications = () => {
       transparent={true}
     >
       <View style={styles.container}>
-        <Header 
+        <Header
           title="Notifications"
           leftIcon="arrow-left"
           onLeftPress={() => router.back()}
           rightIcon="refresh"
-          onRightPress={getNotifications}
+          onRightPress={() => getNotifications(true)}
           backgroundColor="rgba(0,0,0,0.7)"
           textColor="white"
           iconColor="white"
@@ -68,7 +74,7 @@ const Notifications = () => {
             refreshControl={
               <RefreshControl
                 refreshing={refreshing}
-                onRefresh={getNotifications}
+                onRefresh={() => getNotifications(true)}
                 colors={['white']}
                 tintColor="white"
               />
@@ -76,9 +82,9 @@ const Notifications = () => {
           >
             {notifications.length > 0 ? (
               notifications.map(item => (
-                <NotificationItem 
-                  key={item.id} 
-                  item={item} 
+                <NotificationItem
+                  key={item.id}
+                  item={item}
                   router={router}
                   backgroundColor="rgba(26, 26, 26, 0.8)"
                 />
@@ -87,7 +93,7 @@ const Notifications = () => {
               <View style={styles.emptyState}>
                 <Text style={styles.emptyText}>No notifications yet</Text>
                 <Text style={styles.emptySubText}>
-                  When you receive notifications, they&apos;ll appear here
+                  When you receive notifications, they'll appear here
                 </Text>
               </View>
             )}
@@ -115,18 +121,15 @@ const styles = StyleSheet.create({
     paddingTop: hp(2),
     paddingBottom: hp(4),
     gap: hp(1.8),
-    backgroundColor: 'transparent',
   },
   emptyScrollContent: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'transparent',
   },
   emptyState: {
     alignItems: 'center',
     paddingHorizontal: wp(8),
-    backgroundColor: 'transparent',
   },
   emptyText: {
     fontSize: hp(2.2),

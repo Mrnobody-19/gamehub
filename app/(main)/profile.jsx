@@ -15,7 +15,7 @@ import Loading from "../../components/Loading";
 import { getUserData } from "../../services/userServices";
 import { followUser, unfollowUser, checkIfFollowing, getFollowersCount, getFollowingCount } from "../../services/followServices";
 
-let limit = 0;
+let limit = 4;
 
 const Profile = () => {
   const { user: currentUser } = useAuth();
