@@ -4,7 +4,7 @@
     "slug": "vibe-exchange",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/vibexa2.png",
+    "icon": "./assets/images/playstore.png",
     "scheme": "vibexa",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
@@ -12,15 +12,19 @@
       "supportsTablet": true,
       "runtimeVersion": {
         "policy": "appVersion"
+      },
+      "bundleIdentifier": "com.mrnoone.vibeexchange",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/vibexa2.png",
+        "foregroundImage": "./assets/images/playstore.png",
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.mrnoone.vibeexchange",
+      "package": "com.joker19.vibeexchange",
       "runtimeVersion": "1.0.0"
     },
     "web": {
@@ -33,26 +37,41 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/splash-icon.png",
+          "image": "./assets/images/playstore.png",
           "imageWidth": 200,
           "resizeMode": "contain",
           "backgroundColor": "#ffffff"
         }
       ],
-      "expo-secure-store"
+      "expo-secure-store",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "compileSdkVersion": 35,
+            "targetSdkVersion": 35,
+            "minSdkVersion": 23,
+            "javaCompileOptions": {
+              "sourceCompatibility": "17",
+              "targetCompatibility": "17"
+            },
+            "kotlinVersion": "1.9.24"
+          }
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true
     },
     "updates": {
-      "url": "https://u.expo.dev/dcb9488a-13b4-4e3a-acaf-b62fd1570077"
+      "url": "https://u.expo.dev/6d281a03-4cb5-441c-b2b2-d84256bb018b"
     },
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "09ffee5b-2714-4648-886c-6e4b85964e2e"
+        "projectId": "9bb5802d-7b28-4444-acbd-b6e7452123a4"
       }
     },
-    "owner": "mrnoone"
+    "owner": "joker19"
   }
 }

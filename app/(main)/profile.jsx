@@ -309,14 +309,9 @@ const UserHeader = ({
 
         <View style={styles.tabsContainer}>
           <TouchableOpacity style={styles.tabButton}>
-            <Text style={styles.tabText}>PHOTOS</Text>
+            <Text style={styles.tabText}>Posts</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.tabButton}>
-            <Text style={styles.tabText}>VIDEOS</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.tabButton}>
-            <Text style={styles.tabText}>POSTS</Text>
-          </TouchableOpacity>
+ 
         </View>
 
         <View style={styles.aboutSection}>

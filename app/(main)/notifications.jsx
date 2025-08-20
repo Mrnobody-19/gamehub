@@ -93,7 +93,7 @@ const Notifications = () => {
               <View style={styles.emptyState}>
                 <Text style={styles.emptyText}>No notifications yet</Text>
                 <Text style={styles.emptySubText}>
-                  When you receive notifications, they'll appear here
+                  When you receive notifications,they ll appear here
                 </Text>
               </View>
             )}

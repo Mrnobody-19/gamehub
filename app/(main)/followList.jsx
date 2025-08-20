@@ -102,7 +102,7 @@ const FollowList = () => {
       ) : (
         <FlatList
           data={users}
-          contentContainerStyle={styles.listContainer}
+          contentContainerStyle={styles.listContainer}foll
           refreshControl={
             <RefreshControl
               refreshing={refreshing}
@@ -115,7 +115,10 @@ const FollowList = () => {
           renderItem={({ item }) => (
             <TouchableOpacity 
               style={styles.userContainer}
-              onPress={() => router.push(`/profile/${item.id}`)}
+             onPress={() => router.push({ 
+    pathname: "profile", 
+    params: { userId: item?.user?.id } 
+  })}
             >
               <Avatar uri={item.image} size={hp(6)} rounded={hp(6)/2} />
               <View style={styles.userInfo}>

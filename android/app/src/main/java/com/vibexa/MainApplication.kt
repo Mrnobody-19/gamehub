@@ -1,4 +1,4 @@
-package com.mrnoone.vibeexchange
+package com.vibexa
 
 import android.app.Application
 import android.content.res.Configuration

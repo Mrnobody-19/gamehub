@@ -6,23 +6,13 @@
   "build": {
     "development": {
       "developmentClient": true,
-      "distribution": "internal",
-      "android": {
-        "buildType": "apk"  // Generates debug APK
-      }
+      "distribution": "internal"
     },
     "preview": {
-      "distribution": "internal",
-      "android": {
-        "buildType": "apk"  // Generates unsigned APK for testing
-      }
+      "distribution": "internal"
     },
     "production": {
-      "autoIncrement": false,
-      "android": {
-        "buildType": "apk",  // Generates signed release APK
-        "gradleCommand": ":app:bundleRelease"  // Optional: Use ':app:assembleRelease' for APK
-      }
+      "autoIncrement": true
     }
   },
   "submit": {

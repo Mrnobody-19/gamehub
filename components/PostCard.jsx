@@ -90,7 +90,10 @@ const PostCard = ({
     <View style={[styles.card, hasShadow && styles.shadow]}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity style={styles.userInfo} onPress={openPostDetails}>
+        <TouchableOpacity style={styles.userInfo}onPress={() => router.push({ 
+    pathname: "profile", 
+    params: { userId: item?.user?.id } 
+  })}>
           <Avater
             size={hp(5)}
             uri={item?.user?.image}
