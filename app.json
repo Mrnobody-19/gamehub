@@ -30,14 +30,14 @@
     "web": {
       "bundler": "metro",
       "output": "static",
-      "favicon": "./assets/images/vibexa.png"
+      "favicon": "/assets/images/playstore.png"
     },
     "plugins": [
       "expo-router",
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/playstore.png",
+          "image": "/assets/images/playstore.png",
           "imageWidth": 200,
           "resizeMode": "contain",
           "backgroundColor": "#ffffff"
@@ -64,7 +64,7 @@
       "typedRoutes": true
     },
     "updates": {
-      "url": "https://u.expo.dev/6d281a03-4cb5-441c-b2b2-d84256bb018b"
+      "url": "https://u.expo.dev/9bb5802d-7b28-4444-acbd-b6e7452123a4"
     },
     "extra": {
       "router": {},
