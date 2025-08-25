@@ -24,7 +24,7 @@ const Button = ({
 
   const pressedStyle = isPressed
     ? {
-        shadowColor: '#F77737',
+        shadowColor: '#6a0dad',
         shadowOpacity: 1,
         shadowRadius: 15,
         elevation: 12,
@@ -60,7 +60,7 @@ export default Button;
 
 const styles = StyleSheet.create({
   button: {
-    backgroundColor: '#F77737',
+    backgroundColor: '#b662f3ff',
     height: hp(6.6),
     justifyContent: 'center',
     alignItems: 'center',

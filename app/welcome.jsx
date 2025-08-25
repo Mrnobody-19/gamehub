@@ -82,7 +82,7 @@ const styles = StyleSheet.create({
   circle2: {
     width: wp(100),
     height: wp(100),
-    backgroundColor: '#6a0dad',
+    backgroundColor: '#FCA5A5',
     bottom: -wp(30),
     left: -wp(40),
   },
@@ -118,7 +118,7 @@ const styles = StyleSheet.create({
     marginBottom: hp(8),
   },
   primaryButton: {
-    backgroundColor: '',
+    backgroundColor: '#b662f3ff',
     borderWidth: 1,
     borderColor: theme.colors.primary,
     borderRadius: 30,
