@@ -33,7 +33,6 @@ const HomeScreen = () => {
   const [posts, setPosts] = useState([]);
   const [users, setUsers] = useState([]);
   const [hasMore, setHasMore] = useState(true);
-  const [headerVisible, setHeaderVisible] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [followingStatus, setFollowingStatus] = useState({});
   const scrollY = useRef(new Animated.Value(0)).current;
@@ -180,7 +179,6 @@ const HomeScreen = () => {
       useNativeDriver: false,
       listener: (event) => {
         const currentOffset = event.nativeEvent.contentOffset.y;
-        setHeaderVisible(currentOffset <= lastOffset.current || currentOffset <= 0);
         lastOffset.current = currentOffset;
       },
     }
@@ -307,65 +305,71 @@ const HomeScreen = () => {
           scrollEventThrottle={16}
         />
 
-        {headerVisible && (
-          <View style={styles.bottomBar}>
-            <Pressable 
-              onPress={() => router.push("/home")}
-              style={styles.bottomBarButton}
-            >
-              <Icon
-                name="home"
-                size={hp(3.2)}
-                strokeWidth={2}
-                color="white"
-              />
-            </Pressable>
-            <Pressable 
-              onPress={() => router.push("/notifications")}
-              style={styles.bottomBarButton}
-            >
-              <Icon
-                name="heart"
-                size={hp(3.2)}
-                strokeWidth={2}
-                color="white"
-              />
-            </Pressable>
-            <Pressable 
-              onPress={() => router.push("/newPost")}
-              style={styles.bottomBarButton}
-            >
+        {/* Updated bottom navbar to match the image */}
+        <View style={styles.bottomBar}>
+          <Pressable 
+            onPress={() => router.push("/home")}
+            style={styles.bottomBarButton}
+          >
+            <Icon
+              name="home"
+              size={hp(3.2)}
+              strokeWidth={2}
+              color="white"
+            />
+            
+          </Pressable>
+          <Pressable 
+            onPress={() => router.push("/notifications")}
+            style={styles.bottomBarButton}
+          >
+            <Icon
+              name="heart"
+              size={hp(3.2)}
+              strokeWidth={2}
+              color="white"
+            />
+            
+          </Pressable>
+          <Pressable 
+            onPress={() => router.push("/newPost")}
+            style={styles.bottomBarButton}
+          >
+            <View style={styles.centralButton}>
               <Icon
                 name="plus"
-                size={hp(3.2)}
-                strokeWidth={2}
-                color="white"
-              />
-            </Pressable>
-            <Pressable 
-              onPress={() => router.push("/home")}
-              style={styles.bottomBarButton}
-            >
-              <Icon
-                name="location"
-                size={hp(3.2)}
-                strokeWidth={2}
-                color="white"
-              />
-            </Pressable>
-            <Pressable 
-              onPress={() => router.push("/profile")}
-              style={styles.bottomBarButton}
-            >
-              <Avatar
-                uri={user?.image}
                 size={hp(4)}
-                rounded={hp(4)/2}
-                style={{ borderWidth: 2, borderColor: theme.colors.primary }}
+                strokeWidth={2}
+                color="black"
               />
-            </Pressable>
-          </View>
-        )}
+            </View>
+           
+          </Pressable>
+          <Pressable 
+            onPress={() => router.push("/home")}
+            style={styles.bottomBarButton}
+          >
+            <Icon
+              name="location"
+              size={hp(3.2)}
+              strokeWidth={2}
+              color="white"
+            />
+            
+          </Pressable>
+          <Pressable 
+            onPress={() => router.push("/profile")}
+            style={styles.bottomBarButton}
+          >
+            <Avatar
+              uri={user?.image}
+              size={hp(3.2)}
+              rounded={hp(3.5)/2}
+              style={styles.profileAvatar}
+            />
+            
+          </Pressable>
+        </View>
       </View>
     </ScreenWrapper>
   );
@@ -439,7 +443,7 @@ const styles = StyleSheet.create({
     fontSize: hp(1.5),
   },
   listStyle: {
-    paddingBottom: hp(10),
+    paddingBottom: hp(12), // Increased padding to accommodate the taller navbar
   },
   noPosts: {
     color: theme.colors.textSecondary,
@@ -447,21 +451,44 @@ const styles = StyleSheet.create({
     fontSize: hp(2),
   },
   bottomBar: {
-    position: "fixed",
+    position: "absolute",
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: "black",
+    backgroundColor: "rgba(0, 0, 0, 0.95)",
     flexDirection: "row",
     justifyContent: "space-around",
-    alignItems: "center",
+    alignItems: "flex-start",
     paddingVertical: hp(1.5),
-    borderTopWidth: 1,
-    borderTopColor: theme.colors.border,
+    paddingHorizontal: wp(2),
+    borderTopWidth: 0.5,
+    borderTopColor: '#333',
+    height: hp(8), // Taller navbar to accommodate labels
   },
   bottomBarButton: {
     alignItems: "center",
+    justifyContent: "flex-start",
+    flex: 1,
+    paddingTop: hp(0.5),
+  },
+  bottomBarLabel: {
+    color: "white",
+    fontSize: hp(1.4),
+    marginTop: hp(0.8),
+    fontWeight: "400",
+  },
+  centralButton: {
+    width: hp(5.5),
+    height: hp(5.5),
+    borderRadius: hp(2.75),
+    backgroundColor: "white",
     justifyContent: "center",
+    alignItems: "center",
+    marginBottom: hp(0.2),
+  },
+  profileAvatar: {
+    borderWidth: 1.5,
+    borderColor: "#444",
   },
 });
 

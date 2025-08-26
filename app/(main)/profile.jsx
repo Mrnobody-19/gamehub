@@ -215,9 +215,20 @@ const Profile = () => {
         <Pressable onPress={() => router.push("/notifications")} style={styles.bottomBarButton}>
           <Icon name="heart" size={hp(3.2)} strokeWidth={2} color="white" />
         </Pressable>
-        <Pressable onPress={() => router.push("/newPost")} style={styles.bottomBarButton}>
-          <Icon name="plus" size={hp(3.2)} strokeWidth={2} color="white" />
-        </Pressable>
+        <Pressable 
+                    onPress={() => router.push("/newPost")}
+                    style={styles.bottomBarButton}
+                  >
+                    <View style={styles.centralButton}>
+                      <Icon
+                        name="plus"
+                        size={hp(4)}
+                        strokeWidth={2}
+                        color="black"
+                      />
+                    </View>
+                   
+                  </Pressable>
         <Pressable onPress={() => router.push("/home")} style={styles.bottomBarButton}>
           <Icon name="location" size={hp(3.2)} strokeWidth={2} color="white" />
         </Pressable>
@@ -391,6 +402,15 @@ const styles = StyleSheet.create({
     color: 'white',
     fontWeight: 'bold',
     fontSize: hp(1.8),
+  },
+    centralButton: {
+    width: hp(5.5),
+    height: hp(5.5),
+    borderRadius: hp(2.75),
+    backgroundColor: "white",
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: hp(0.2),
   },
   statsContainer: {
     flexDirection: 'row',
