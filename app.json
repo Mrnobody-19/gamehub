@@ -20,7 +20,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/playstore.png",
+        "foregroundImage": "./assets/images/icon.png",
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
@@ -30,15 +30,14 @@
     "web": {
       "bundler": "metro",
       "output": "static",
-      "favicon": "./assets/images/playstore.png"
+      "favicon": "./assets/images/appstore.png"
     },
     "plugins": [
       "expo-router",
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/playstore.png",
-          "imageWidth": 200,
+          "image": "./assets/images/splash.png",
           "resizeMode": "contain",
           "backgroundColor": "#ffffff"
         }
@@ -69,7 +68,7 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "9bb5802d-7b28-4444-acbd-b6e7452123a4"
+        "projectId": "d2a62090-9d8f-41a1-ac32-574dfbdf3c4f"
       }
     },
     "owner": "joker19"
