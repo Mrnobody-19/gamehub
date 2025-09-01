@@ -229,8 +229,8 @@ const Profile = () => {
                     </View>
                    
                   </Pressable>
-        <Pressable onPress={() => router.push("/home")} style={styles.bottomBarButton}>
-          <Icon name="location" size={hp(3.2)} strokeWidth={2} color="white" />
+        <Pressable onPress={() => router.push("/messageList")} style={styles.bottomBarButton}>
+          <Icon name="mail" size={hp(3.2)} strokeWidth={2} color="white" />
         </Pressable>
         <Pressable onPress={() => router.push("/profile")} style={styles.bottomBarButton}>
           <Avatar

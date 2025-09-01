@@ -4,20 +4,22 @@
     "slug": "vibe-exchange",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/playstore.png",
+    "icon": "./assets/images/icon.png",
     "scheme": "vibexa",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
+
     "ios": {
       "supportsTablet": true,
       "runtimeVersion": {
         "policy": "appVersion"
       },
-      "bundleIdentifier": "com.mrnoone.vibeexchange",
+      "bundleIdentifier": "com.joker19.vibeexchange",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }
     },
+
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/icon.png",
@@ -27,17 +29,19 @@
       "package": "com.joker19.vibeexchange",
       "runtimeVersion": "1.0.0"
     },
+
     "web": {
       "bundler": "metro",
       "output": "static",
       "favicon": "./assets/images/appstore.png"
     },
+
     "plugins": [
       "expo-router",
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/splash.png",
+          "image": "./assets/images/splash-logo.png",
           "resizeMode": "contain",
           "backgroundColor": "#ffffff"
         }
@@ -59,18 +63,22 @@
         }
       ]
     ],
+
     "experiments": {
       "typedRoutes": true
     },
+
     "updates": {
-      "url": "https://u.expo.dev/9bb5802d-7b28-4444-acbd-b6e7452123a4"
+      "url": "https://u.expo.dev/d2a62090-9d8f-41a1-ac32-574dfbdf3c4f"
     },
+
     "extra": {
       "router": {},
       "eas": {
         "projectId": "d2a62090-9d8f-41a1-ac32-574dfbdf3c4f"
       }
     },
+
     "owner": "joker19"
   }
 }

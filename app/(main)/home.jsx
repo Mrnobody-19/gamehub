@@ -309,13 +309,13 @@ const HomeScreen = () => {
         <View style={styles.bottomBar}>
           <Pressable 
             onPress={() => router.push("/home")}
-            style={styles.bottomBarButton}
+            style={styles.bottomBarButton} 
           >
             <Icon
               name="home"
               size={hp(3.2)}
               strokeWidth={2}
-              color="white"
+              color={theme.colors.primary}
             />
             
           </Pressable>
@@ -346,7 +346,7 @@ const HomeScreen = () => {
            
           </Pressable>
           <Pressable 
-            onPress={() => router.push("/home")}
+            onPress={() => router.push("/messageList")}
             style={styles.bottomBarButton}
           >
             <Icon

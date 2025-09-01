@@ -12,7 +12,7 @@ export const theme = {
 
         text: 'white',          // White for main text on dark backgrounds
         textlight: 'white',     // Light Gray for secondary text or placeholders
-        textDark: 'white',      // Dark Black for text on light backgrounds
+        textDark: '#b662f3ff',      // Dark Black for text on light backgrounds
 
         roses: '#6a0dad',         // Bright Red for errors or destructive actions
         roseLight: '#FCA5A5',     // Softer Red for warning or alert highlights
