@@ -5,204 +5,169 @@ import { formatTimeAgo } from "../helpers/dateUtils";
 export const createNotification = async (notification) => {
   try {
     const { data, error } = await supabase
-      .from('notifications')
+      .from("notifications")
       .insert(notification)
       .select()
       .single();
 
     if (error) {
-      console.log('notification error:', error);
-      return { success: false, msg: 'Something went wrong' };
+      console.log("[NotificationService] createNotification error:", error);
+      return { success: false, msg: "Failed to create notification" };
     }
 
-    return { success: true, data: data };
-  } catch (error) {
-    console.log('notification error: ', error);
-    return { success: false, msg: 'Something went wrong' };
+    return { success: true, data };
+  } catch (err) {
+    console.log("[NotificationService] createNotification exception:", err);
+    return { success: false, msg: "Unexpected error creating notification" };
   }
-}
+};
 
 export const fetchNotifications = async (receiverId) => {
   try {
-    console.log('Fetching notifications for user:', receiverId);
-    
-    // Join with users table using the actual columns that exist
+    console.log("[NotificationService] Fetching notifications for:", receiverId);
+
     const { data, error } = await supabase
-      .from('notifications')
+      .from("notifications")
       .select(`
         *,
         sender:users!notifications_senderId_fkey (id, name, image, email)
       `)
-      .eq('receiverId', receiverId)
-      .order('created_at', { ascending: false });
+      .eq("receiverId", receiverId)
+      .order("created_at", { ascending: false });
 
     if (error) {
-      console.log('Join with users failed:', error);
+      console.log("[NotificationService] Join failed, using fallback:", error);
       return await fetchNotificationsFallback(receiverId);
     }
 
-    console.log('Notifications with user joins:', data);
+    const formatted = data.map((n) => ({
+      ...n,
+      sender: n.sender
+        ? {
+            id: n.sender.id,
+            name: n.sender.name || "User",
+            image: n.sender.image || null,
+            email: n.sender.email || null,
+          }
+        : null,
+      timeAgo: formatTimeAgo(n.created_at),
+    }));
 
-    // Format notifications with user data
-    const formattedNotifications = data.map(notification => {
-      let senderData = null;
-      
-      if (notification.sender) {
-        senderData = {
-          id: notification.sender.id,
-          name: notification.sender.name || 'User',
-          image: notification.sender.image || null,
-          email: notification.sender.email || null
-        };
-      }
-
-      return {
-        ...notification,
-        sender: senderData,
-        timeAgo: formatTimeAgo(notification.created_at)
-      };
-    });
-
-    return { success: true, data: formattedNotifications };
-  } catch (error) {
-    console.log('fetchNotifications error: ', error);
-    return { success: false, msg: 'Could not fetch notifications' };
+    return { success: true, data: formatted };
+  } catch (err) {
+    console.log("[NotificationService] fetchNotifications exception:", err);
+    return { success: false, msg: "Could not fetch notifications" };
   }
 };
 
-// Fallback method if direct join fails
+// --- Fallback (no joins available) ---
 const fetchNotificationsFallback = async (receiverId) => {
   try {
-    console.log('Using fallback method to fetch notifications');
-    
-    // Simple query without joins
+    console.log("[NotificationService] Using fallback for:", receiverId);
+
     const { data, error } = await supabase
-      .from('notifications')
-      .select('*')
-      .eq('receiverId', receiverId)
-      .order('created_at', { ascending: false });
+      .from("notifications")
+      .select("*")
+      .eq("receiverId", receiverId)
+      .order("created_at", { ascending: false });
 
     if (error) {
-      console.log('fetchNotifications error:', error);
-      return { success: false, msg: 'Could not fetch notifications' };
+      console.log("[NotificationService] Fallback error:", error);
+      return { success: false, msg: "Could not fetch notifications" };
     }
 
-    console.log('Raw notifications data:', data);
-
-    // Fetch sender information from users table using the correct columns
-    const notificationsWithSenders = await Promise.all(
-      data.map(async (notification) => {
+    const withSenders = await Promise.all(
+      data.map(async (n) => {
         let senderData = null;
         let postImage = null;
-        
-        // Fetch sender information from USERS table with correct columns
-        if (notification.senderId) {
+
+        if (n.senderId) {
           const { data: user, error: userError } = await supabase
-            .from('users')
-            .select('id, name, image, email')
-            .eq('id', notification.senderId)
+            .from("users")
+            .select("id, name, image, email")
+            .eq("id", n.senderId)
             .single();
-          
+
           if (!userError && user) {
             senderData = {
               id: user.id,
-              name: user.name || 'User',
+              name: user.name || "User",
               image: user.image || null,
-              email: user.email || null
+              email: user.email || null,
             };
           } else {
-            console.log('Error fetching sender from users:', userError);
-            // If we can't get user data, at least provide basic info
-            senderData = {
-              id: notification.senderId,
-              name: 'User',
-              image: null,
-              email: null
-            };
+            senderData = { id: n.senderId, name: "User", image: null };
           }
         }
-        
-        // Fetch post image if postId exists
-        if (notification.postId) {
+
+        if (n.postId) {
           const { data: post } = await supabase
-            .from('posts')
-            .select('image')
-            .eq('id', notification.postId)
+            .from("posts")
+            .select("image")
+            .eq("id", n.postId)
             .single();
-          
           postImage = post?.image || null;
         }
-        
+
         return {
-          ...notification,
+          ...n,
           sender: senderData,
-          postImage: postImage,
-          timeAgo: formatTimeAgo(notification.created_at)
+          postImage,
+          timeAgo: formatTimeAgo(n.created_at),
         };
       })
     );
 
-    return { success: true, data: notificationsWithSenders };
-  } catch (error) {
-    console.log('fetchNotificationsFallback error: ', error);
-    return { success: false, msg: 'Could not fetch notifications' };
+    return { success: true, data: withSenders };
+  } catch (err) {
+    console.log("[NotificationService] Fallback exception:", err);
+    return { success: false, msg: "Could not fetch notifications" };
   }
 };
 
 export const markAsRead = async (notificationId) => {
   try {
     const { error } = await supabase
-      .from('notifications')
+      .from("notifications")
       .update({ read: true })
-      .eq('id', notificationId);
+      .eq("id", notificationId);
 
     if (error) {
-      console.log('markAsRead error:', error);
-      return { success: false, msg: 'Could not mark as read' };
+      console.log("[NotificationService] markAsRead error:", error);
+      return { success: false, msg: "Failed to mark as read" };
     }
 
     return { success: true };
-  } catch (error) {
-    console.log('markAsRead error: ', error);
-    return { success: false, msg: 'Could not mark as read' };
+  } catch (err) {
+    console.log("[NotificationService] markAsRead exception:", err);
+    return { success: false, msg: "Unexpected error marking as read" };
   }
 };
 
-// Helper function to check your table structure
+// --- Debug utilities ---
 export const checkTableStructure = async () => {
   try {
-    // Get a sample record to see the structure
-    const { data, error } = await supabase
-      .from('notifications')
-      .select('*')
-      .limit(1);
-    
+    const { data, error } = await supabase.from("notifications").select("*").limit(1);
     if (error) {
-      console.log('Error checking table structure:', error);
-      return;
+      console.log("[NotificationService] checkTableStructure error:", error);
+    } else {
+      console.log("[NotificationService] Table sample:", data);
     }
-    
-    console.log('Notifications table structure sample:', data);
-  } catch (error) {
-    console.log('Error checking table structure:', error);
+  } catch (err) {
+    console.log("[NotificationService] checkTableStructure exception:", err);
   }
 };
 
-// New function to check database access
 export const checkDatabaseAccess = async () => {
   try {
-    // Check if we can access users table
-    const { data: usersData, error: usersError } = await supabase
-      .from('users')
-      .select('id, name, image, email')
-      .limit(1);
-    
-    console.log('Users table access:', usersError ? 'DENIED' : 'GRANTED', usersError);
-    if (!usersError) {
-      console.log('Sample user data:', usersData);
-    }
-    
-  } catch (error) {
-    console.log('Database access check error:', error);
+    const { data, error } = await supabase.from("users").select("id, name, image, email").limit(1);
+    console.log(
+      "[NotificationService] Users table access:",
+      error ? "DENIED" : "GRANTED",
+      error
+    );
+    if (!error) console.log("Sample user:", data);
+  } catch (err) {
+    console.log("[NotificationService] checkDatabaseAccess exception:", err);
   }
 };

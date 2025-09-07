@@ -7,8 +7,8 @@ export const theme = {
         darklight: '#080707ff',     // Lighter Dark Gray for secondary backgrounds
 
        
-        grey: '#9CA3AF',          // Neutral Gray for borders, dividers, or disabled states
-        lightGrey: '#121418ff',     // Light Gray for background or subtle elements
+        grey: 'black',          // Neutral Gray for borders, dividers, or disabled states
+        lightGrey: 'black',     // Light Gray for background or subtle elements
 
         text: 'white',          // White for main text on dark backgrounds
         textlight: 'white',     // Light Gray for secondary text or placeholders

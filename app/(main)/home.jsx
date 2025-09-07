@@ -23,6 +23,7 @@ import PostCard from "../../components/PostCard";
 import Loading from "../../components/Loading";
 import { getUserData, fetchAllUsers } from "../../services/userServices";
 import { followUser, unfollowUser, checkIfFollowing } from "../../services/followServices";
+import BottomBar from "../../components/BottomBar"; // Fixed import path
 
 let limit = 0;
 
@@ -49,44 +50,48 @@ const HomeScreen = () => {
   };
 
   const handlePostEvent = useCallback(async (payload) => {
-    console.log('Change received!', payload);
-    
-    if (payload.eventType === 'INSERT') {
+    if (payload.eventType === "INSERT") {
       const userData = await getUserData(payload.new.user_id);
       const newPost = {
         ...payload.new,
         postlikes: [],
         comments: [{ count: 0 }],
-        user: userData.success ? userData.data : {
-          id: payload.new.user_id,
-          name: 'Unknown User',
-          username: 'unknown',
-          image: null
-        }
+        user: userData.success
+          ? userData.data
+          : {
+              id: payload.new.user_id,
+              name: "Unknown User",
+              username: "unknown",
+              image: null,
+            },
       };
-      setPosts(prev => shuffleArray([newPost, ...prev]));
-    } 
-    else if (payload.eventType === 'DELETE') {
-      setPosts(prev => shuffleArray(prev.filter(post => post.id !== payload.old.id)));
-    } 
-    else if (payload.eventType === 'UPDATE') {
-      setPosts(prev => shuffleArray(prev.map(post => 
-        post.id === payload.new.id ? 
-        { ...post, body: payload.new.body, file: payload.new.file } : 
-        post
-      )));
+      setPosts((prev) => shuffleArray([newPost, ...prev]));
+    } else if (payload.eventType === "DELETE") {
+      setPosts((prev) =>
+        shuffleArray(prev.filter((post) => post.id !== payload.old.id))
+      );
+    } else if (payload.eventType === "UPDATE") {
+      setPosts((prev) =>
+        shuffleArray(
+          prev.map((post) =>
+            post.id === payload.new.id
+              ? { ...post, body: payload.new.body, file: payload.new.file }
+              : post
+          )
+        )
+      );
     }
   }, []);
 
   const setupRealtimeSubscription = useCallback(() => {
     postChannel.current = supabase
-      .channel('posts')
+      .channel("posts")
       .on(
-        'postgres_changes',
+        "postgres_changes",
         {
-          event: '*',
-          schema: 'public',
-          table: 'posts'
+          event: "*",
+          schema: "public",
+          table: "posts",
         },
         handlePostEvent
       )
@@ -101,18 +106,21 @@ const HomeScreen = () => {
     }
   }, []);
 
-  const loadFollowStatuses = useCallback(async (usersList) => {
-    if (!user?.id) return;
-    
-    const statuses = {};
-    for (const userItem of usersList) {
-      const res = await checkIfFollowing(user.id, userItem.id);
-      if (res.success) {
-        statuses[userItem.id] = res.isFollowing;
+  const loadFollowStatuses = useCallback(
+    async (usersList) => {
+      if (!user?.id) return;
+
+      const statuses = {};
+      for (const userItem of usersList) {
+        const res = await checkIfFollowing(user.id, userItem.id);
+        if (res.success) {
+          statuses[userItem.id] = res.isFollowing;
+        }
       }
-    }
-    setFollowingStatus(statuses);
-  }, [user?.id]);
+      setFollowingStatus(statuses);
+    },
+    [user?.id]
+  );
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -120,7 +128,7 @@ const HomeScreen = () => {
       limit = 0;
       const [postsRes, usersRes] = await Promise.all([
         fetchPosts(limit),
-        fetchAllUsers()
+        fetchAllUsers(),
       ]);
 
       if (postsRes.success) {
@@ -128,7 +136,7 @@ const HomeScreen = () => {
         setHasMore(postsRes.data.length >= 4);
       }
       if (usersRes.success) {
-        const otherUsers = usersRes.data.filter(u => u.id !== user?.id);
+        const otherUsers = usersRes.data.filter((u) => u.id !== user?.id);
         setUsers(otherUsers);
         await loadFollowStatuses(otherUsers);
       }
@@ -143,10 +151,10 @@ const HomeScreen = () => {
     const loadData = async () => {
       const [postsRes, usersRes] = await Promise.all([
         loadInitialPosts(),
-        fetchAllUsers()
+        fetchAllUsers(),
       ]);
       if (usersRes.success) {
-        const otherUsers = usersRes.data.filter(u => u.id !== user?.id);
+        const otherUsers = usersRes.data.filter((u) => u.id !== user?.id);
         setUsers(otherUsers);
         await loadFollowStatuses(otherUsers);
       }
@@ -185,25 +193,22 @@ const HomeScreen = () => {
   );
 
   const navigateToProfile = (userId) => {
-    console.log("Navigating to profile:", userId);
     router.push({
       pathname: "/profile",
-      params: { userId }
+      params: { userId },
     });
   };
 
   const toggleFollow = async (userId) => {
     if (!user?.id) return;
-    
+
     const isFollowing = followingStatus[userId];
     try {
-      // Optimistic update
-      setFollowingStatus(prev => ({
+      setFollowingStatus((prev) => ({
         ...prev,
-        [userId]: !isFollowing
+        [userId]: !isFollowing,
       }));
-      
-      // Update in database
+
       if (isFollowing) {
         await unfollowUser(user.id, userId);
       } else {
@@ -211,10 +216,9 @@ const HomeScreen = () => {
       }
     } catch (error) {
       console.error("Error toggling follow:", error);
-      // Revert optimistic update on error
-      setFollowingStatus(prev => ({
+      setFollowingStatus((prev) => ({
         ...prev,
-        [userId]: isFollowing
+        [userId]: isFollowing,
       }));
     }
   };
@@ -236,12 +240,11 @@ const HomeScreen = () => {
             <View style={styles.usersContainer}>
               <Text style={styles.sectionTitle}>Connect With Others</Text>
 
-              <ScrollView 
-                horizontal 
+              <ScrollView
+                horizontal
                 showsHorizontalScrollIndicator={false}
                 contentContainerStyle={styles.usersScroll}
               >
-                
                 {users.map((userItem) => (
                   <TouchableOpacity
                     key={userItem.id}
@@ -253,7 +256,7 @@ const HomeScreen = () => {
                       <Avatar
                         uri={userItem.image}
                         size={hp(7)}
-                        rounded={hp(7)/2}
+                        rounded={hp(7) / 2}
                         style={styles.userAvatar}
                       />
                     </View>
@@ -263,10 +266,11 @@ const HomeScreen = () => {
                     <Text style={styles.userHandle} numberOfLines={1}>
                       @{userItem.username}
                     </Text>
-                    <TouchableOpacity 
+                    <TouchableOpacity
                       style={[
                         styles.followButton,
-                        followingStatus[userItem.id] && styles.followingButton
+                        followingStatus[userItem.id] &&
+                          styles.followingButton,
                       ]}
                       onPress={(e) => {
                         e.stopPropagation();
@@ -274,7 +278,9 @@ const HomeScreen = () => {
                       }}
                     >
                       <Text style={styles.followButtonText}>
-                        {followingStatus[userItem.id] ? "Following" : "Follow"}
+                        {followingStatus[userItem.id]
+                          ? "Following"
+                          : "Follow"}
                       </Text>
                     </TouchableOpacity>
                   </TouchableOpacity>
@@ -305,71 +311,8 @@ const HomeScreen = () => {
           scrollEventThrottle={16}
         />
 
-        {/* Updated bottom navbar to match the image */}
-        <View style={styles.bottomBar}>
-          <Pressable 
-            onPress={() => router.push("/home")}
-            style={styles.bottomBarButton} 
-          >
-            <Icon
-              name="home"
-              size={hp(3.2)}
-              strokeWidth={2}
-              color={theme.colors.primary}
-            />
-            
-          </Pressable>
-          <Pressable 
-            onPress={() => router.push("/notifications")}
-            style={styles.bottomBarButton}
-          >
-            <Icon
-              name="heart"
-              size={hp(3.2)}
-              strokeWidth={2}
-              color="white"
-            />
-            
-          </Pressable>
-          <Pressable 
-            onPress={() => router.push("/newPost")}
-            style={styles.bottomBarButton}
-          >
-            <View style={styles.centralButton}>
-              <Icon
-                name="plus"
-                size={hp(4)}
-                strokeWidth={2}
-                color="black"
-              />
-            </View>
-           
-          </Pressable>
-          <Pressable 
-            onPress={() => router.push("/messageList")}
-            style={styles.bottomBarButton}
-          >
-            <Icon
-              name="mail"
-              size={hp(3.2)}
-              strokeWidth={2}
-              color="white"
-            />
-            
-          </Pressable>
-          <Pressable 
-            onPress={() => router.push("/profile")}
-            style={styles.bottomBarButton}
-          >
-            <Avatar
-              uri={user?.image}
-              size={hp(3.2)}
-              rounded={hp(3.5)/2}
-              style={styles.profileAvatar}
-            />
-            
-          </Pressable>
-        </View>
+        {/* Use the imported BottomBar component */}
+        <BottomBar />
       </View>
     </ScreenWrapper>
   );
@@ -380,6 +323,8 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: theme.colors.background,
   },
+
+  /** User section */
   usersContainer: {
     marginTop: hp(2),
     marginBottom: hp(2),
@@ -387,9 +332,9 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     color: "white",
-    fontSize: hp(2.2),
-    fontWeight: "bold",
-    marginBottom: hp(1),
+    fontSize: hp(2.4),
+    fontWeight: "600",
+    marginBottom: hp(1.2),
   },
   usersScroll: {
     flexDirection: "row",
@@ -398,12 +343,17 @@ const styles = StyleSheet.create({
   },
   userCard: {
     backgroundColor: theme.colors.card,
-    borderRadius: 12,
+    borderRadius: 16,
     alignItems: "center",
-    marginRight: wp(3),
-    padding: wp(2),
+    marginRight: wp(3.5),
+    paddingVertical: hp(1.5),
+    paddingHorizontal: wp(2),
     width: wp(28),
-    elevation: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 4,
   },
   userAvatarContainer: {
     marginBottom: hp(1),
@@ -414,81 +364,46 @@ const styles = StyleSheet.create({
   },
   userName: {
     color: "white",
-    fontWeight: "bold",
-    fontSize: hp(1.8),
+    fontWeight: "600",
+    fontSize: hp(1.9),
     marginBottom: 2,
     textAlign: "center",
   },
   userHandle: {
     color: theme.colors.textSecondary,
     fontSize: hp(1.5),
-    marginBottom: hp(0.5),
+    marginBottom: hp(0.8),
     textAlign: "center",
   },
   followButton: {
     backgroundColor: theme.colors.primary,
-    borderRadius: 8,
-    paddingVertical: 4,
-    paddingHorizontal: 12,
+    borderRadius: 20,
+    paddingVertical: 6,
+    paddingHorizontal: 16,
     marginTop: 4,
   },
   followingButton: {
-    backgroundColor: '#333',
-    borderWidth: 1,
+    backgroundColor: "transparent",
+    borderWidth: 1.5,
     borderColor: theme.colors.primary,
   },
   followButtonText: {
     color: "white",
-    fontWeight: "bold",
-    fontSize: hp(1.5),
+    fontWeight: "600",
+    fontSize: hp(1.6),
+    textAlign: "center",
   },
+
+  /** Post list */
   listStyle: {
-    paddingBottom: hp(12), // Increased padding to accommodate the taller navbar
+    paddingBottom: hp(12),
   },
   noPosts: {
     color: theme.colors.textSecondary,
     textAlign: "center",
     fontSize: hp(2),
-  },
-  bottomBar: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: "rgba(0, 0, 0, 0.95)",
-    flexDirection: "row",
-    justifyContent: "space-around",
-    alignItems: "flex-start",
-    paddingVertical: hp(1.5),
-    paddingHorizontal: wp(2),
-    borderTopWidth: 0.5,
-    borderTopColor: '#333',
-    height: hp(8), // Taller navbar to accommodate labels
-  },
-  bottomBarButton: {
-    alignItems: "center",
-    justifyContent: "flex-start",
-    flex: 1,
-    paddingTop: hp(0.5),
-  },
-  bottomBarLabel: {
-    color: "white",
-    fontSize: hp(1.4),
-    marginTop: hp(0.8),
-    fontWeight: "400",
-  },
-  centralButton: {
-    width: hp(5.5),
-    height: hp(5.5),
-    borderRadius: hp(2.75),
-    backgroundColor: "white",
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: hp(0.2),
-  },
-  profileAvatar: {
-    borderWidth: 1.5,
-    borderColor: "#444",
+    fontStyle: "italic",
+    marginTop: hp(1),
   },
 });
 

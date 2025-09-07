@@ -23,7 +23,7 @@ const Welcome = () => {
           <View style={styles.textContainer}>
             <Text style={styles.title}>VIBEXA</Text>
             <View style={styles.titleUnderline} />
-            <Text style={styles.subtitle}>Where Connection Ignites</Text>
+            <Text style={styles.subtitle}>Connect. Sell. Chat. Discover </Text>
           </View>
 
           <View style={styles.footer}>
@@ -92,7 +92,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   title: {
-    color: '#fff',
+    color: 'white',
     fontSize: hp(8.5),
     fontWeight: '900',
     letterSpacing: 2,
@@ -106,7 +106,7 @@ const styles = StyleSheet.create({
 
   },
   subtitle: {
-    color: 'rgba(255, 255, 255, 0.8)',
+    color: 'white',
     fontSize: hp(2.7),
     letterSpacing: 1.2,
     textAlign: 'center',
@@ -129,8 +129,8 @@ const styles = StyleSheet.create({
     shadowRadius: 10,
   },
   buttonText: {
-    color: '#fff',
-    fontSize: hp(2.3),
+    color: 'white',
+    fontSize: hp(2.2),
     fontWeight: '600',
     letterSpacing: 0.8,
   },
@@ -140,12 +140,12 @@ const styles = StyleSheet.create({
     gap: wp(2),
   },
   loginText: {
-    color: 'rgba(255, 255, 255, 0.7)',
-    fontSize: hp(2.1),
+    color: 'white',
+    fontSize: hp(2.5),
   },
   loginLink: {
     color: theme.colors.primary,
-    fontSize: hp(2.1),
+    fontSize: hp(2.5),
     fontWeight: '700',
     textDecorationLine: 'underline',
   },

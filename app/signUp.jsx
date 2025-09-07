@@ -124,8 +124,8 @@ const styles = StyleSheet.create({
         color: theme.colors.primary
     },
     subtitle: {
-        fontSize: hp(2.5),
-        color: '#aaa',
+        fontSize: hp(2.6),
+        color: 'white',
         marginBottom: hp(3)
     },
     form: {
@@ -134,7 +134,8 @@ const styles = StyleSheet.create({
     input: {
         color: 'white',
         marginLeft: 10, // Original input style
-        flex: 1
+        flex: 10,
+        fontSize: hp(2.4),
     },
     button: {
         marginTop: hp(2),
@@ -150,7 +151,7 @@ const styles = StyleSheet.create({
         gap: wp(1.5)
     },
     footerText: {
-        color: '#aaa',
+        color: 'white',
         fontSize: hp(2.5)
     },
     loginText: {

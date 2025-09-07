@@ -54,16 +54,16 @@ const Login = () => {
           <Text style={styles.subtitle}>Please Login To Continue</Text>
           <Input
             style={styles.input}
-            icon={<Icon name="mail" size={26} color={theme.colors.primary} strokewidth={1.6} />}
+            icon={<Icon name="mail" size={26} color={theme.colors.primary} strokewidth={1.6}/>}
             placeholder="Enter your Email"
-            placeholderTextColor="#888"
+            placeholderTextColor="white"
             onChangeText={(value) => { emailRef.current = value; }}
           />
           <Input
             style={styles.input}
             icon={<Icon name="lock" size={26} color={theme.colors.primary} strokewidth={1.6} />}
             placeholder="Enter your password"
-            placeholderTextColor="#888"
+            placeholderTextColor="white"
             secureTextEntry
             onChangeText={(value) => { passwordRef.current = value; }}
           />
@@ -121,7 +121,7 @@ const styles = StyleSheet.create({
     textShadowRadius: 10,
   },
   subtitle: {
-    fontSize: hp(2.3),
+    fontSize: hp(2.6),
     color: '#fff',
  
     marginBottom: hp(3),
@@ -132,15 +132,11 @@ const styles = StyleSheet.create({
     marginBottom: hp(4),
   },
   input: {
-    color: '#fff',
+    color: 'white',
     paddingLeft: wp(3),
     flex: 1,
-    fontSize: hp(2),
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    borderRadius: 12,
-    paddingVertical: hp(1.8),
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
+    fontSize: hp(2.4),
+
   },
   forgetPassword: {
     textAlign: 'right',

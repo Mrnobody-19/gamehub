@@ -21,6 +21,7 @@ import Button from '../../components/Button'
 import { updateUser } from '../../services/userServices'
 import { useRouter } from 'expo-router'
 import * as ImagePicker from 'expo-image-picker'
+import BottomBar from '../../components/BottomBar' // Import BottomBar
 
 const EditProfile = () => {
     const { user: currentUser, setUserData } = useAuth();
@@ -214,6 +215,9 @@ const EditProfile = () => {
                     </View>
                 </ScrollView>
             </View>
+            
+            {/* Add BottomBar component */}
+            <BottomBar />
         </ScreenWrapper>
     )
 }
@@ -227,7 +231,7 @@ const styles = StyleSheet.create({
     },
     scrollContainer: {
         paddingHorizontal: wp(4),
-        paddingBottom: hp(4),
+        paddingBottom: hp(12), // Added extra padding for BottomBar
     },
     form: {
         gap: 20,
@@ -269,11 +273,12 @@ const styles = StyleSheet.create({
         fontSize: hp(1.8),
         textAlign: 'center',
         marginBottom: 10,
+        color: '#ccc',
     },
     input: {
         backgroundColor: '#1a1a1a',
         borderWidth: 1,
-        
+        borderColor: '#333',
         borderRadius: 12,
         paddingVertical: 15,
         paddingHorizontal: 20,

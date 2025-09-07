@@ -1,74 +1,61 @@
-// app/chat/[id].js
-import { 
-  StyleSheet, 
-  Pressable, 
-  Text, 
-  View, 
-  FlatList, 
-  TextInput, 
-  ActivityIndicator,
-  KeyboardAvoidingView,
-  Platform 
-} from "react-native";
-import { useLocalSearchParams, useRouter } from "expo-router";
-import React, { useState, useEffect } from "react";
-import { supabase } from "../../lib/supabase";
+import { StyleSheet, Pressable, Text, View, FlatList, ActivityIndicator, TextInput, KeyboardAvoidingView, Platform } from "react-native";
+import React, { useEffect, useState, useRef } from "react";
+import ScreenWrapper from "../../components/ScreenWrapper";
 import { useAuth } from "../../contexts/AuthContext";
+import { useRouter, useLocalSearchParams } from "expo-router";
+import { supabase } from "../../lib/supabase";
 import { theme } from "../../constants/theme";
+import Icon from "../../assets/icons";
 import { hp, wp } from "../../helpers/common";
 import Avatar from "../../components/Avater";
-import ScreenWrapper from "../../components/ScreenWrapper";
 
-const ChatScreen = () => {
-  const { id } = useLocalSearchParams();
-  const router = useRouter();
+const Chat = () => {
   const { user: currentUser } = useAuth();
+  const router = useRouter();
+  const params = useLocalSearchParams();
+  const recipientId = params.id;
+  
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
   const [recipient, setRecipient] = useState(null);
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
-
-  // Format time function
-  const formatTime = (timestamp) => {
-    if (!timestamp) return "";
-    
-    const date = new Date(timestamp);
-    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  };
+  
+  const flatListRef = useRef();
 
   // Fetch recipient details
   const fetchRecipient = async () => {
     try {
       const { data, error } = await supabase
         .from("users")
-        .select("id, name, image, bio")
-        .eq("id", id)
+        .select("id, name, image")
+        .eq("id", recipientId)
         .single();
-      
+
       if (error) throw error;
       setRecipient(data);
-    } catch (error) {
-      console.error("Error fetching recipient:", error.message);
+    } catch (err) {
+      console.error("Error fetching recipient:", err.message);
     }
   };
 
   // Fetch messages between current user and recipient
   const fetchMessages = async () => {
     try {
+      setLoading(true);
       const { data, error } = await supabase
         .from("messages")
         .select("*")
-        .or(`and(sender_id.eq.${currentUser.id},recipient_id.eq.${id}),and(sender_id.eq.${id},recipient_id.eq.${currentUser.id})`)
+        .or(`and(sender_id.eq.${currentUser.id},recipient_id.eq.${recipientId}),and(sender_id.eq.${recipientId},recipient_id.eq.${currentUser.id})`)
         .order("created_at", { ascending: true });
-      
+
       if (error) throw error;
       setMessages(data || []);
-      
+
       // Mark messages as read
       await markMessagesAsRead();
-    } catch (error) {
-      console.error("Error fetching messages:", error.message);
+    } catch (err) {
+      console.error("Error fetching messages:", err.message);
     } finally {
       setLoading(false);
     }
@@ -77,67 +64,96 @@ const ChatScreen = () => {
   // Mark messages as read
   const markMessagesAsRead = async () => {
     try {
-      await supabase
+      const { error } = await supabase
         .from("messages")
         .update({ read_at: new Date().toISOString() })
-        .eq("sender_id", id)
+        .eq("sender_id", recipientId)
         .eq("recipient_id", currentUser.id)
         .is("read_at", null);
-    } catch (error) {
-      console.error("Error marking messages as read:", error.message);
+
+      if (error) throw error;
+    } catch (err) {
+      console.error("Error marking messages as read:", err.message);
     }
   };
 
-  // Send message
+  // Send a new message
   const sendMessage = async () => {
     if (!newMessage.trim() || sending) return;
-    
+
     try {
       setSending(true);
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from("messages")
         .insert({
-          content: newMessage.trim(),
           sender_id: currentUser.id,
-          recipient_id: id
-        });
-      
+          recipient_id: recipientId,
+          content: newMessage.trim(),
+        })
+        .select();
+
       if (error) throw error;
+
+      // Add the new message to local state
+      setMessages([...messages, data[0]]);
       setNewMessage("");
-    } catch (error) {
-      console.error("Error sending message:", error.message);
+
+      // Scroll to bottom after sending
+      setTimeout(() => {
+        flatListRef.current?.scrollToEnd({ animated: true });
+      }, 100);
+    } catch (err) {
+      console.error("Error sending message:", err.message);
     } finally {
       setSending(false);
     }
   };
 
-  // Set up real-time subscription for new messages
   useEffect(() => {
-    fetchRecipient();
-    fetchMessages();
+    if (recipientId) {
+      fetchRecipient();
+      fetchMessages();
+      
+      // Set up real-time subscription for new messages
+      const channel = supabase
+        .channel('chat_messages')
+        .on('postgres_changes', {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'messages',
+          filter: `or(and(sender_id.eq.${currentUser?.id},recipient_id.eq.${recipientId}),and(sender_id.eq.${recipientId},recipient_id.eq.${currentUser?.id}))`
+        }, (payload) => {
+          // Add new message to state
+          setMessages(prev => [...prev, payload.new]);
+          
+          // Mark as read if it's a received message
+          if (payload.new.sender_id === recipientId) {
+            markMessagesAsRead();
+          }
+          
+          // Scroll to bottom
+          setTimeout(() => {
+            flatListRef.current?.scrollToEnd({ animated: true });
+          }, 100);
+        })
+        .subscribe();
 
-    const channel = supabase
-      .channel(`chat:${id}`)
-      .on('postgres_changes', {
-        event: 'INSERT',
-        schema: 'public',
-        table: 'messages',
-        filter: `or(and(sender_id.eq.${currentUser.id},recipient_id.eq.${id}),and(sender_id.eq.${id},recipient_id.eq.${currentUser.id}))`
-      }, (payload) => {
-        setMessages(prev => [...prev, payload.new]);
-        
-        // If message is from recipient, mark as read
-        if (payload.new.sender_id === id) {
-          markMessagesAsRead();
-        }
-      })
-      .subscribe();
+      // Cleanup subscription on unmount
+      return () => {
+        supabase.removeChannel(channel);
+      };
+    }
+  }, [recipientId]);
 
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [id, currentUser]);
+  // Format time for message display
+  const formatTime = (timestamp) => {
+    if (!timestamp) return "";
+    
+    const date = new Date(timestamp);
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  };
 
+  // Render each message
   const renderMessage = ({ item }) => {
     const isCurrentUser = item.sender_id === currentUser.id;
     
@@ -167,76 +183,77 @@ const ChatScreen = () => {
     );
   };
 
-  if (loading) {
-    return (
-      <ScreenWrapper bg="black">
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={theme.colors.primary} />
-        </View>
-      </ScreenWrapper>
-    );
-  }
-
   return (
     <ScreenWrapper bg="black">
       {/* Header */}
       <View style={styles.header}>
         <Pressable onPress={() => router.back()} style={styles.backButton}>
-          <View style={styles.placeholderIcon} />
+          <Icon name="chevron-left" size={hp(3)} strokeWidth={2} color="white" />
         </Pressable>
-        <View style={styles.headerInfo}>
-          <Avatar 
-            uri={recipient?.image} 
-            size={hp(4)} 
-            rounded={hp(4)/2} 
-          />
-          <Text style={styles.headerName}>{recipient?.name || "Unknown User"}</Text>
-        </View>
-        <View style={styles.headerRight} />
+        
+        {recipient ? (
+          <View style={styles.recipientInfo}>
+            <Avatar 
+              uri={recipient.image || "https://ui-avatars.com/api/?name=" + (recipient.name || "User")}
+              size={hp(4)} 
+              rounded={hp(4) / 2} 
+            />
+            <Text style={styles.recipientName}>{recipient.name || "Unknown User"}</Text>
+          </View>
+        ) : (
+          <Text style={styles.recipientName}>Loading...</Text>
+        )}
+        
+        <Pressable style={styles.moreButton}>
+          <Icon name="more-vertical" size={hp(3)} strokeWidth={2} color="white" />
+        </Pressable>
       </View>
 
       {/* Messages List */}
-      <FlatList
-        data={messages}
-        keyExtractor={(item) => item.id}
-        renderItem={renderMessage}
-        contentContainerStyle={styles.messagesContainer}
-        showsVerticalScrollIndicator={false}
-        inverted={false}
-      />
+      {loading ? (
+        <ActivityIndicator size="large" color={theme.colors.primary} style={{ marginTop: hp(20) }} />
+      ) : (
+        <FlatList
+          ref={flatListRef}
+          data={messages}
+          keyExtractor={(item) => item.id}
+          renderItem={renderMessage}
+          contentContainerStyle={styles.messagesList}
+          showsVerticalScrollIndicator={false}
+          onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
+          onLayout={() => flatListRef.current?.scrollToEnd({ animated: true })}
+        />
+      )}
 
       {/* Message Input */}
       <KeyboardAvoidingView 
         behavior={Platform.OS === "ios" ? "padding" : "height"}
-        style={styles.inputContainer}
+        keyboardVerticalOffset={Platform.OS === "ios" ? hp(8) : 0}
       >
-        <TextInput
-          style={styles.textInput}
-          placeholder="Type a message..."
-          placeholderTextColor="#666"
-          value={newMessage}
-          onChangeText={setNewMessage}
-          multiline
-          maxLength={500}
-        />
-        <Pressable 
-          onPress={sendMessage} 
-          style={[styles.sendButton, !newMessage.trim() && styles.sendButtonDisabled]}
-          disabled={!newMessage.trim() || sending}
-        >
-          <View style={styles.placeholderIconSmall} />
-        </Pressable>
+        <View style={styles.inputContainer}>
+          <TextInput
+            style={styles.input}
+            placeholder="Type a message..."
+            placeholderTextColor="#aaa"
+            value={newMessage}
+            onChangeText={setNewMessage}
+            multiline
+            maxLength={500}
+          />
+          <Pressable 
+            style={[styles.sendButton, !newMessage.trim() && styles.sendButtonDisabled]}
+            onPress={sendMessage}
+            disabled={!newMessage.trim() || sending}
+          >
+            <Icon name="send" size={hp(2.5)} strokeWidth={2} color={newMessage.trim() ? theme.colors.primary : "#555"} />
+          </Pressable>
+        </View>
       </KeyboardAvoidingView>
     </ScreenWrapper>
   );
 };
 
 const styles = StyleSheet.create({
-  loadingContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-  },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -248,39 +265,27 @@ const styles = StyleSheet.create({
   backButton: {
     padding: wp(1),
   },
-  placeholderIcon: {
-    width: hp(3),
-    height: hp(3),
-    backgroundColor: "#666",
-    borderRadius: 4,
-  },
-  placeholderIconSmall: {
-    width: hp(2.5),
-    height: hp(2.5),
-    backgroundColor: "white",
-    borderRadius: 4,
-  },
-  headerInfo: {
+  recipientInfo: {
     flexDirection: "row",
     alignItems: "center",
     flex: 1,
     marginLeft: wp(3),
   },
-  headerName: {
+  recipientName: {
     fontSize: hp(2),
-    fontWeight: "bold",
     color: "white",
-    marginLeft: wp(3),
+    fontWeight: "bold",
+    marginLeft: wp(2),
   },
-  headerRight: {
-    width: hp(3),
+  moreButton: {
+    padding: wp(1),
   },
-  messagesContainer: {
-    padding: wp(4),
-    paddingBottom: hp(2),
+  messagesList: {
+    paddingHorizontal: wp(4),
+    paddingVertical: hp(2),
   },
   messageContainer: {
-    marginBottom: hp(1.5),
+    marginVertical: hp(0.5),
   },
   currentUserMessage: {
     alignItems: "flex-end",
@@ -290,7 +295,8 @@ const styles = StyleSheet.create({
   },
   messageBubble: {
     maxWidth: "80%",
-    padding: wp(3),
+    paddingHorizontal: wp(3),
+    paddingVertical: hp(1.2),
     borderRadius: hp(2),
     marginBottom: hp(0.5),
   },
@@ -321,39 +327,35 @@ const styles = StyleSheet.create({
     textAlign: "right",
   },
   otherUserTime: {
-    color: "#aaa",
+    color: "#ccc",
     textAlign: "left",
   },
   inputContainer: {
     flexDirection: "row",
     alignItems: "center",
-    padding: wp(3),
+    paddingHorizontal: wp(4),
+    paddingVertical: hp(1.5),
     borderTopWidth: 1,
     borderTopColor: "#222",
     backgroundColor: "black",
   },
-  textInput: {
+  input: {
     flex: 1,
     backgroundColor: "#222",
     color: "white",
     borderRadius: hp(2),
     paddingHorizontal: wp(4),
-    paddingVertical: hp(1.5),
-    marginRight: wp(2),
-    maxHeight: hp(12),
+    paddingVertical: hp(1.2),
     fontSize: hp(1.8),
+    maxHeight: hp(12),
   },
   sendButton: {
-    backgroundColor: theme.colors.primary,
-    width: hp(5),
-    height: hp(5),
-    borderRadius: hp(2.5),
-    justifyContent: "center",
-    alignItems: "center",
+    marginLeft: wp(2),
+    padding: wp(2),
   },
   sendButtonDisabled: {
-    backgroundColor: "#333",
+    opacity: 0.5,
   },
 });
 
-export default ChatScreen;
+export default Chat;
