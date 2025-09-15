@@ -1,16 +1,16 @@
-import { Alert, StyleSheet, Text, View, TouchableOpacity, Share } from "react-native";
-import React, { useEffect, useState } from "react";
+import { Alert, StyleSheet, Text, View, TouchableOpacity, Share, Animated, Easing } from "react-native";
+import React, { useEffect, useState, useRef } from "react";
 import { theme } from "../constants/theme";
 import { hp, stripHtmlTags, wp } from "../helpers/common";
 import Avater from "./Avater";
-import moment from "moment";
 import Icon from "../assets/icons";
-import RenderHTML from "react-native-render-html";
 import { Image } from "expo-image";
 import { downloadFile, getSupabaseFileUrl } from "../services/imageService";
-import { Video } from "expo-av";
+import { Video, ResizeMode } from "expo-av";
 import { createPostLike, removePostLike } from "../services/postService";
 import Loading from "./Loading";
+import { BlurView } from "expo-blur";
+import { LinearGradient } from "expo-linear-gradient";
 
 const PostCard = ({
   item,
@@ -25,36 +25,54 @@ const PostCard = ({
   const [likes, setLikes] = useState([]);
   const [loading, setLoading] = useState(false);
   const [isLiked, setIsLiked] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [showFullCaption, setShowFullCaption] = useState(false);
+  
+  const likeScale = useRef(new Animated.Value(1)).current;
+  const videoRef = useRef(null);
+  const captionText = stripHtmlTags(item?.body || "");
+  const shouldTruncate = captionText.length > 100;
 
   useEffect(() => {
     setLikes(item?.postLikes || []);
     setIsLiked(item?.postLikes?.some(like => like.userId === currentUser?.id) || false);
   }, [item, currentUser]);
 
-  const textStyle = {
-    color: theme.colors.dark,
-    fontSize: hp(2.2),
-    lineHeight: hp(3),
-  };
-
-  const tagsStyles = {
-    body: textStyle,
-    p: textStyle,
-    div: textStyle,
-    a: { ...textStyle, color: theme.colors.primary, textDecorationLine: 'underline' },
-    h1: { ...textStyle, fontSize: hp(3), fontWeight: 'bold', marginVertical: hp(1) },
-    h4: { ...textStyle, fontSize: hp(2.5), fontWeight: '600', marginVertical: hp(0.5) },
-  };
-
   const openPostDetails = () => showMoreIcon && router.push({ 
     pathname: "postDetails", 
     params: { postId: item?.id } 
   });
 
+  const navigateToProfile = () => {
+    router.push({ pathname: "profile", params: { userId: item?.user?.id } });
+  };
+
+  const animateLike = () => {
+    Animated.sequence([
+      Animated.timing(likeScale, {
+        toValue: 1.3,
+        duration: 150,
+        easing: Easing.ease,
+        useNativeDriver: true,
+      }),
+      Animated.timing(likeScale, {
+        toValue: 1,
+        duration: 150,
+        easing: Easing.ease,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  };
+
   const onLike = async () => {
-    if (!currentUser) return Alert.alert("Error", "You need to be logged in to like a post.");
+    if (!currentUser) {
+      Alert.alert("Sign In Required", "You need to be logged in to like posts.");
+      return;
+    }
     
+    animateLike();
     setIsLiked(!isLiked);
+    
     if (isLiked) {
       setLikes(likes.filter(like => like.userId !== currentUser.id));
       await removePostLike(item.id, currentUser.id);
@@ -65,7 +83,11 @@ const PostCard = ({
   };
 
   const onShare = async () => {
-    const content = { message: stripHtmlTags(item?.body) };
+    const content = { 
+      message: `${stripHtmlTags(item?.body)}\n\nShared via AppName`, 
+      title: 'Check out this post!'
+    };
+    
     if (item?.file) {
       setLoading(true);
       try {
@@ -76,146 +98,195 @@ const PostCard = ({
         setLoading(false);
       }
     }
-    await Share.share(content);
+    
+    try {
+      await Share.share(content);
+    } catch (error) {
+      console.log("Sharing error:", error);
+    }
   };
 
   const handlePostDelete = () => {
-    Alert.alert("Confirm", "Delete this post?", [
+    Alert.alert("Delete Post", "Are you sure you want to delete this post? This action cannot be undone.", [
       { text: "Cancel", style: "cancel" },
       { text: "Delete", onPress: () => onDelete(item), style: "destructive" }
     ]);
   };
 
+  const toggleVideoPlayback = () => {
+    if (item?.file && item.file.includes("postVideos")) {
+      if (isPlaying) {
+        videoRef.current.pauseAsync();
+      } else {
+        videoRef.current.playAsync();
+      }
+      setIsPlaying(!isPlaying);
+    }
+  };
+
+  const toggleCaption = () => {
+    setShowFullCaption(!showFullCaption);
+  };
+
   return (
     <View style={[styles.card, hasShadow && styles.shadow]}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.userInfo}onPress={() => router.push({ 
-    pathname: "profile", 
-    params: { userId: item?.user?.id } 
-  })}>
-          <Avater
-            size={hp(5)}
-            uri={item?.user?.image}
-            rounded={theme.radius.lg}
-            style={styles.avatar}
-          />
-          <View style={styles.userTextContainer}>
-            <Text style={styles.username}>{item?.user?.name}</Text>
-            <Text style={styles.time}>{moment(item?.created_at).fromNow()}</Text>
-          </View>
-        </TouchableOpacity>
-        {showMoreIcon && (
-          <TouchableOpacity 
-            onPress={openPostDetails}
-            style={styles.moreButton}
-          >
-            <Icon name="threeDotsHorizontal" size={hp(2.5)} color="#888" />
-          </TouchableOpacity>
-        )}
-      </View>
-
-      {/* Content */}
       <TouchableOpacity onPress={openPostDetails} activeOpacity={0.9}>
-        <View style={styles.content}>
-          {item?.body && (
-            <RenderHTML
-              contentWidth={wp(85)}
-              source={{ html: item.body }}
-              tagsStyles={tagsStyles}
-              baseStyle={{ paddingHorizontal: wp(1) }}
-            />
-          )}
-          
+        <View style={styles.mediaContainer}>
           {item?.file && item.file.includes("postImage") && (
             <Image
               source={getSupabaseFileUrl(item.file)}
-              style={styles.mediaImage}
+              style={styles.media}
               contentFit="cover"
               transition={200}
+              priority="high"
             />
           )}
 
           {item?.file && item.file.includes("postVideos") && (
-            <Video
-              source={getSupabaseFileUrl(item.file)}
-              style={styles.mediaVideo}
-              useNativeControls
-              resizeMode="cover"
-            />
+            <View>
+              <Video
+                ref={videoRef}
+                source={getSupabaseFileUrl(item.file)}
+                style={styles.media}
+                useNativeControls={false}
+                resizeMode={ResizeMode.COVER}
+                isLooping
+                onPlaybackStatusUpdate={(status) => {
+                  setIsPlaying(status.isPlaying);
+                }}
+              />
+              <TouchableOpacity 
+                style={styles.videoPlayButton} 
+                onPress={toggleVideoPlayback}
+                activeOpacity={0.8}
+              >
+                <BlurView intensity={80} tint="dark" style={styles.playButtonBlur}>
+                  <Icon 
+                    name={isPlaying ? "pause" : "play"} 
+                    size={hp(3)} 
+                    color="#fff" 
+                  />
+                </BlurView>
+              </TouchableOpacity>
+            </View>
           )}
+
+          {/* Top gradient overlay */}
+          <LinearGradient
+            colors={['rgba(0,0,0,0.6)', 'transparent']}
+            style={styles.topGradient}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 0, y: 1 }}
+          />
+
+          {/* Header overlay */}
+          <View style={styles.headerOverlay}>
+            <TouchableOpacity 
+              style={styles.userInfo}
+              onPress={navigateToProfile}
+              activeOpacity={0.8}
+            >
+              <Avater
+                size={hp(4.5)}
+                uri={item?.user?.image}
+                rounded={theme.radius.lg}
+                style={styles.avatar}
+              />
+              <BlurView intensity={50} tint="dark" style={styles.blurUsername}>
+                <Text style={styles.username}>{item?.user?.name}</Text>
+              </BlurView>
+            </TouchableOpacity>
+            {showMoreIcon && (
+              <TouchableOpacity onPress={openPostDetails} style={styles.moreButton}>
+                <BlurView intensity={80} tint="dark" style={styles.moreButtonBlur}>
+                  <Icon name="threeDotsHorizontal" size={hp(2.2)} color="#fff" />
+                </BlurView>
+              </TouchableOpacity>
+            )}
+          </View>
+
+          {/* Bottom gradient overlay */}
+          <LinearGradient
+            colors={['transparent', 'rgba(0,0,0,0.7)']}
+            style={styles.bottomGradient}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 0, y: 1 }}
+          />
+
+          {/* Footer overlay */}
+          <View style={styles.footerOverlay}>
+            <View style={styles.actionsRow}>
+              <TouchableOpacity onPress={onLike} activeOpacity={0.7}>
+                <Animated.View style={[styles.iconContainer, { transform: [{ scale: likeScale }] }]}>
+                  <Icon
+                    name="heart"
+                    size={hp(2.8)}
+                    color={isLiked ? theme.colors.roses : "#fff"}
+                    fill={isLiked ? theme.colors.roses : "transparent"}
+                  />
+                  {likes.length > 0 && (
+                    <Text style={styles.count}>{likes.length}</Text>
+                  )}
+                </Animated.View>
+              </TouchableOpacity>
+
+              <TouchableOpacity onPress={openPostDetails} activeOpacity={0.7}>
+                <View style={styles.iconContainer}>
+                  <Icon name="comment" size={hp(2.8)} color="#fff" />
+                  {item?.comments?.[0]?.count > 0 && (
+                    <Text style={styles.count}>{item?.comments?.[0]?.count}</Text>
+                  )}
+                </View>
+              </TouchableOpacity>
+
+              <TouchableOpacity onPress={onShare} activeOpacity={0.7}>
+                {loading ? (
+                  <Loading size="small" color="#fff" />
+                ) : (
+                  <Icon name="share" size={hp(2.8)} color="#fff" />
+                )}
+              </TouchableOpacity>
+            </View>
+
+            {/* Caption */}
+            {captionText && (
+              <TouchableOpacity 
+                onPress={shouldTruncate ? toggleCaption : null}
+                activeOpacity={shouldTruncate ? 0.7 : 1}
+              >
+                <BlurView intensity={50} tint="dark" style={styles.blurCaption}>
+                  <Text style={styles.caption} numberOfLines={showFullCaption ? 0 : 2}>
+                    {captionText}
+                  </Text>
+                  {shouldTruncate && (
+                    <Text style={styles.readMore}>
+                      {showFullCaption ? "Show less" : "Read more"}
+                    </Text>
+                  )}
+                </BlurView>
+              </TouchableOpacity>
+            )}
+          </View>
         </View>
       </TouchableOpacity>
 
-      {/* Footer */}
-      <View style={styles.footer}>
-        <TouchableOpacity 
-          style={styles.action} 
-          onPress={onLike}
-          activeOpacity={0.7}
-        >
-          <View style={styles.iconContainer}>
-            <Icon
-              name="heart"
-              size={hp(3)}
-              color={isLiked ? theme.colors.roses : "#888"}
-              fill={isLiked ? theme.colors.roses : "transparent"}
-            />
-            {likes.length > 0 && (
-              <Text style={[styles.count, isLiked && styles.likedCount]}>
-                {likes.length}
-              </Text>
-            )}
-          </View>
-        </TouchableOpacity>
-
-        <TouchableOpacity 
-          style={styles.action} 
-          onPress={openPostDetails}
-          activeOpacity={0.7}
-        >
-          <View style={styles.iconContainer}>
-            <Icon name="comment" size={hp(3)} color="#888" />
-            {item?.comments?.[0]?.count > 0 && (
-              <Text style={styles.count}>
-                {item?.comments?.[0]?.count}
-              </Text>
-            )}
-          </View>
-        </TouchableOpacity>
-
-        <TouchableOpacity 
-          style={styles.action} 
-          onPress={onShare}
-          activeOpacity={0.7}
-        >
-          {loading ? (
-            <Loading size="small" color="#888" />
-          ) : (
-            <View style={styles.iconContainer}>
-              <Icon name="share" size={hp(3)} color="#888" />
-            </View>
-          )}
-        </TouchableOpacity>
-      </View>
-
-      {/* Edit/Delete (for user's posts) */}
+      {/* Edit/Delete (for user's own posts) */}
       {showDelete && currentUser?.id === item?.userId && (
         <View style={styles.editActions}>
           <TouchableOpacity 
             style={styles.editBtn} 
-            onPress={() => onEdit(item)}
+            onPress={() => onEdit(item)} 
             activeOpacity={0.7}
           >
-            <Icon name="edit" size={hp(2.5)} color={theme.colors.primary} />
+            <Icon name="edit" size={hp(2.2)} color={theme.colors.primary} />
             <Text style={styles.editText}>Edit</Text>
           </TouchableOpacity>
           <TouchableOpacity 
             style={styles.deleteBtn} 
-            onPress={handlePostDelete}
+            onPress={handlePostDelete} 
             activeOpacity={0.7}
           >
-            <Icon name="delete" size={hp(2.5)} color={theme.colors.error} />
+            <Icon name="delete" size={hp(2.2)} color={theme.colors.error} />
             <Text style={styles.deleteText}>Delete</Text>
           </TouchableOpacity>
         </View>
@@ -226,130 +297,177 @@ const PostCard = ({
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: '#fff',
-    borderRadius: 20,
-    marginBottom: hp(2),
-    padding: hp(2.5),
-    overflow: 'hidden',
+    borderRadius: 24,
+    overflow: "hidden",
+    marginBottom: hp(2.5),
+    backgroundColor: 'rgba(30, 30, 30, 0.7)',
     borderWidth: 1,
-    borderColor: '#f0f0f0',
+    borderColor: 'rgba(255,255,255,0.08)',
   },
   shadow: {
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.05,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.25,
     shadowRadius: 12,
-    elevation: 5,
+    elevation: 8,
   },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: hp(1.5),
+  mediaContainer: {
+    position: "relative",
+    width: "100%",
+    height: hp(55),
+    borderRadius: 24,
+    overflow: "hidden",
+  },
+  media: {
+    width: "100%",
+    height: "100%",
+  },
+  topGradient: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    height: hp(15),
+    zIndex: 1,
+  },
+  bottomGradient: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: hp(20),
+    zIndex: 1,
+  },
+  headerOverlay: {
+    position: "absolute",
+    top: hp(2),
+    left: wp(4),
+    right: wp(4),
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    zIndex: 2,
   },
   userInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-  },
-  userTextContainer: {
-    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
   },
   avatar: {
-    marginRight: wp(3),
-    borderWidth: 1.5,
-    borderColor: '#f8f8f8',
+    marginRight: wp(2),
+    borderWidth: 2,
+    borderColor: "rgba(255,255,255,0.2)",
   },
   username: {
-    fontSize: hp(2.3),
-    fontWeight: '600',
-    color: "black",
+    color: "#fff",
+    fontSize: hp(1.9),
+    fontWeight: "600",
   },
-  time: {
-    fontSize: hp(1.6),
-    color: '#888',
-    marginTop: hp(0.3),
+  blurUsername: {
+    borderRadius: 20,
+    paddingHorizontal: wp(2.5),
+    paddingVertical: hp(0.5),
+    marginLeft: wp(1.5),
+    overflow: 'hidden',
   },
   moreButton: {
-    padding: wp(1.5),
+    padding: wp(1),
     borderRadius: 20,
   },
-  content: {
+  moreButtonBlur: {
+    borderRadius: 20,
+    padding: wp(1.5),
+    overflow: 'hidden',
+  },
+  footerOverlay: {
+    position: "absolute",
+    bottom: hp(2),
+    left: wp(4),
+    right: wp(4),
+    zIndex: 2,
+  },
+  actionsRow: {
+    flexDirection: "row",
     marginBottom: hp(1.5),
-  },
-  mediaImage: {
-    width: '100%',
-    height: hp(40),
-    borderRadius: 16,
-    marginTop: hp(1.5),
-    backgroundColor: '#f8f8f8',
-  },
-  mediaVideo: {
-    width: '100%',
-    height: hp(40),
-    borderRadius: 16,
-    marginTop: hp(1.5),
-    backgroundColor: '#f8f8f8',
-  },
-  footer: {
-    flexDirection: 'row',
-    paddingTop: hp(1.5),
-    borderTopWidth: 1,
-    borderTopColor: '#f5f5f5',
-    justifyContent: 'space-around',
-  },
-  action: {
-    paddingVertical: hp(0.5),
-    paddingHorizontal: wp(2),
-    borderRadius: 12,
+    gap: wp(5),
   },
   iconContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    padding: wp(1),
   },
   count: {
-    marginLeft: wp(1.5),
-    fontSize: hp(1.8),
-    color: '#888',
-    fontWeight: '500',
+    marginLeft: wp(1.2),
+    fontSize: hp(1.7),
+    color: "#fff",
+    fontWeight: "600",
   },
-  likedCount: {
-    color: theme.colors.roses,
-    fontWeight: '600',
+  blurCaption: {
+    borderRadius: 19,
+    padding: wp(3),
+    overflow: 'hidden',
+  },
+  caption: {
+    color: "#fff",
+    fontSize: hp(1.9),
+    fontWeight: "400",
+    lineHeight: hp(2.4),
+  },
+  readMore: {
+    color: "rgba(255,255,255,0.7)",
+    fontSize: hp(1.7),
+    fontWeight: "500",
+    marginTop: hp(0.5),
   },
   editActions: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    marginTop: hp(1),
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    padding: wp(3),
     gap: wp(4),
+    borderTopWidth: 1,
+    borderTopColor: "rgba(255,255,255,0.08)",
   },
   editBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: hp(1),
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: hp(0.8),
     paddingHorizontal: wp(3),
     borderRadius: 10,
-    backgroundColor: 'rgba(0, 122, 255, 0.08)',
+    backgroundColor: "rgba(0, 122, 255, 0.1)",
   },
   deleteBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: hp(1),
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: hp(0.8),
     paddingHorizontal: wp(3),
     borderRadius: 10,
-    backgroundColor: 'rgba(255, 59, 48, 0.08)',
+    backgroundColor: "rgba(255, 59, 48, 0.1)",
   },
   editText: {
     marginLeft: wp(1.5),
     color: theme.colors.primary,
-    fontSize: hp(1.8),
-    fontWeight: '500',
+    fontSize: hp(1.7),
+    fontWeight: "500",
   },
   deleteText: {
     marginLeft: wp(1.5),
     color: theme.colors.error,
-    fontSize: hp(1.8),
-    fontWeight: '500',
+    fontSize: hp(1.7),
+    fontWeight: "500",
+  },
+  videoPlayButton: {
+    position: "absolute",
+    top: "50%",
+    left: "50%",
+    transform: [{ translateX: -hp(3.5) }, { translateY: -hp(3.5) }],
+    zIndex: 3,
+  },
+  playButtonBlur: {
+    width: hp(7),
+    height: hp(7),
+    borderRadius: hp(3.5),
+    justifyContent: "center",
+    alignItems: "center",
+    overflow: 'hidden',
   },
 });
 

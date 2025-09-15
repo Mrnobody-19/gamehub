@@ -2,6 +2,7 @@
 import { supabase } from "../lib/supabase";
 import { formatTimeAgo } from "../helpers/dateUtils";
 
+// --- Create new notification ---
 export const createNotification = async (notification) => {
   try {
     const { data, error } = await supabase
@@ -22,6 +23,7 @@ export const createNotification = async (notification) => {
   }
 };
 
+// --- Fetch notifications with join ---
 export const fetchNotifications = async (receiverId) => {
   try {
     console.log("[NotificationService] Fetching notifications for:", receiverId);
@@ -40,6 +42,10 @@ export const fetchNotifications = async (receiverId) => {
       return await fetchNotificationsFallback(receiverId);
     }
 
+    if (!data || data.length === 0) {
+      return { success: true, data: [] };
+    }
+
     const formatted = data.map((n) => ({
       ...n,
       sender: n.sender
@@ -49,7 +55,8 @@ export const fetchNotifications = async (receiverId) => {
             image: n.sender.image || null,
             email: n.sender.email || null,
           }
-        : null,
+        : { id: n.senderId, name: "User", image: null },
+      postImage: n.postId ? n.postImage || null : null,
       timeAgo: formatTimeAgo(n.created_at),
     }));
 
@@ -60,10 +67,10 @@ export const fetchNotifications = async (receiverId) => {
   }
 };
 
-// --- Fallback (no joins available) ---
+// --- Optimized fallback (no joins available) ---
 const fetchNotificationsFallback = async (receiverId) => {
   try {
-    console.log("[NotificationService] Using fallback for:", receiverId);
+    console.log("[NotificationService] Using optimized fallback for:", receiverId);
 
     const { data, error } = await supabase
       .from("notifications")
@@ -76,47 +83,52 @@ const fetchNotificationsFallback = async (receiverId) => {
       return { success: false, msg: "Could not fetch notifications" };
     }
 
-    const withSenders = await Promise.all(
-      data.map(async (n) => {
-        let senderData = null;
-        let postImage = null;
+    if (!data || data.length === 0) {
+      return { success: true, data: [] };
+    }
 
-        if (n.senderId) {
-          const { data: user, error: userError } = await supabase
-            .from("users")
-            .select("id, name, image, email")
-            .eq("id", n.senderId)
-            .single();
+    // Collect unique senderIds and postIds
+    const senderIds = [...new Set(data.map((n) => n.senderId).filter(Boolean))];
+    const postIds = [...new Set(data.map((n) => n.postId).filter(Boolean))];
 
-          if (!userError && user) {
-            senderData = {
-              id: user.id,
-              name: user.name || "User",
-              image: user.image || null,
-              email: user.email || null,
-            };
-          } else {
-            senderData = { id: n.senderId, name: "User", image: null };
-          }
-        }
+    // Fetch senders in one query
+    let sendersMap = {};
+    if (senderIds.length > 0) {
+      const { data: users } = await supabase
+        .from("users")
+        .select("id, name, image, email")
+        .in("id", senderIds);
 
-        if (n.postId) {
-          const { data: post } = await supabase
-            .from("posts")
-            .select("image")
-            .eq("id", n.postId)
-            .single();
-          postImage = post?.image || null;
-        }
-
-        return {
-          ...n,
-          sender: senderData,
-          postImage,
-          timeAgo: formatTimeAgo(n.created_at),
+      users?.forEach((u) => {
+        sendersMap[u.id] = {
+          id: u.id,
+          name: u.name || "User",
+          image: u.image || null,
+          email: u.email || null,
         };
-      })
-    );
+      });
+    }
+
+    // Fetch posts in one query
+    let postsMap = {};
+    if (postIds.length > 0) {
+      const { data: posts } = await supabase
+        .from("posts")
+        .select("id, image")
+        .in("id", postIds);
+
+      posts?.forEach((p) => {
+        postsMap[p.id] = p.image || null;
+      });
+    }
+
+    // Build final notifications
+    const withSenders = data.map((n) => ({
+      ...n,
+      sender: sendersMap[n.senderId] || { id: n.senderId, name: "User", image: null },
+      postImage: postsMap[n.postId] || null,
+      timeAgo: formatTimeAgo(n.created_at),
+    }));
 
     return { success: true, data: withSenders };
   } catch (err) {
@@ -125,11 +137,12 @@ const fetchNotificationsFallback = async (receiverId) => {
   }
 };
 
+// --- Mark as read ---
 export const markAsRead = async (notificationId) => {
   try {
     const { error } = await supabase
       .from("notifications")
-      .update({ read: true })
+      .update({ read: true, updated_at: new Date().toISOString() })
       .eq("id", notificationId);
 
     if (error) {
@@ -160,7 +173,10 @@ export const checkTableStructure = async () => {
 
 export const checkDatabaseAccess = async () => {
   try {
-    const { data, error } = await supabase.from("users").select("id, name, image, email").limit(1);
+    const { data, error } = await supabase
+      .from("users")
+      .select("id, name, image, email")
+      .limit(1);
     console.log(
       "[NotificationService] Users table access:",
       error ? "DENIED" : "GRANTED",

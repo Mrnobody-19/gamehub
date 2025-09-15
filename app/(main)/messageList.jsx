@@ -8,6 +8,8 @@ import { theme } from "../../constants/theme";
 import Icon from "../../assets/icons";
 import { hp, wp } from "../../helpers/common";
 import Avatar from "../../components/Avater";
+import BottomBar from "../../components/BottomBar";
+import Header from "../../components/Header";
 
 const MessageList = () => {
   const { user: currentUser } = useAuth();
@@ -166,9 +168,6 @@ const MessageList = () => {
     <ScreenWrapper bg="black">
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Messages</Text>
-        <Pressable>
-          <Icon name="edit" size={hp(3)} strokeWidth={2} color="white" />
-        </Pressable>
       </View>
 
       {/* Search Bar */}
@@ -200,47 +199,23 @@ const MessageList = () => {
       )}
 
       {/* Fixed Bottom Navigation Bar */}
-      <View style={styles.bottomBar}>
-        <Pressable onPress={() => router.push("/home")} style={styles.bottomBarButton}>
-          <Icon name="home" size={hp(3.2)} strokeWidth={2} color="white" />
-        </Pressable>
-        <Pressable onPress={() => router.push("/notifications")} style={styles.bottomBarButton}>
-          <Icon name="heart" size={hp(3.2)} strokeWidth={2} color="white" />
-        </Pressable>
-        <Pressable onPress={() => router.push("/newPost")} style={styles.bottomBarButton}>
-          <View style={styles.centralButton}>
-            <Icon name="plus" size={hp(4)} strokeWidth={2} color="black" />
-          </View>
-        </Pressable>
-        <Pressable onPress={() => router.push("/message")} style={styles.bottomBarButton}>
-          <Icon name="mail" size={hp(3.2)} strokeWidth={2} color={theme.colors.primary} />
-        </Pressable>
-        <Pressable onPress={() => router.push("/profile")} style={styles.bottomBarButton}>
-          <Avatar
-            uri={currentUser?.image}
-            size={hp(4)}
-            rounded={hp(4)/2}
-            style={{ borderWidth: 2, borderColor: theme.colors.primary }}
-          />
-        </Pressable>
-      </View>
+      <BottomBar />
     </ScreenWrapper>
   );
 };
 
 const styles = StyleSheet.create({
   header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
     padding: wp(4),
     alignItems: "center",
     borderBottomWidth: 1,
     borderBottomColor: "#222",
   },
   headerTitle: {
-    fontSize: hp(2.4),
+    fontSize: hp(3),
     fontWeight: "bold",
     color: "white",
+    marginTop: hp(2),
   },
   searchContainer: {
     flexDirection: "row",
@@ -322,32 +297,6 @@ const styles = StyleSheet.create({
     color: "white",
     fontSize: hp(1.6),
     fontWeight: "bold",
-  },
-  centralButton: {
-    width: hp(5.5),
-    height: hp(5.5),
-    borderRadius: hp(2.75),
-    backgroundColor: "white",
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: hp(0.2),
-  },
-  bottomBar: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: "black",
-    flexDirection: "row",
-    justifyContent: "space-around",
-    alignItems: "center",
-    paddingVertical: hp(1.5),
-    borderTopWidth: 1,
-    borderTopColor: theme.colors.border,
-  },
-  bottomBarButton: {
-    alignItems: "center",
-    justifyContent: "center",
   },
 });
 

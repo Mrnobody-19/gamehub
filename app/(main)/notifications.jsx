@@ -1,24 +1,26 @@
-import { 
-  Alert, 
-  StyleSheet, 
-  Pressable, 
-  Text, 
-  View, 
-  ActivityIndicator, 
-  FlatList, 
-  TouchableOpacity, 
-  RefreshControl 
+// app/screens/Notifications.jsx
+import {
+  ActivityIndicator,
+  FlatList,
+  StyleSheet,
+  Text,
+  View,
+  TouchableOpacity,
+  RefreshControl,
 } from "react-native";
 import React, { useState, useEffect } from "react";
 import ScreenWrapper from "../../components/ScreenWrapper";
 import { useAuth } from "../../contexts/AuthContext";
-import { useRouter } from "expo-router";
 import Header from "../../components/Header";
 import { theme } from "../../constants/theme";
 import { hp, wp } from "../../helpers/common";
 import BottomBar from "../../components/BottomBar";
-import { fetchNotifications, markAsRead } from "../../services/notificationService";
+import {
+  fetchNotifications,
+  markAsRead,
+} from "../../services/notificationService";
 import NotificationItem from "../../components/NotificationItem";
+import { supabase } from "../../lib/supabase";
 
 const Notifications = () => {
   const [notifications, setNotifications] = useState([]);
@@ -26,27 +28,59 @@ const Notifications = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
   const { user } = useAuth();
-  const router = useRouter();
 
   useEffect(() => {
     loadNotifications();
   }, []);
 
+  // --- Realtime subscription ---
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const channel = supabase
+      .channel("notifications-realtime")
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "notifications",
+          filter: `receiverId=eq.${user.id}`,
+        },
+        (payload) => {
+          console.log("[Realtime] New notification:", payload.new);
+
+          setNotifications((prev) => [
+            {
+              ...payload.new,
+              sender: payload.new.sender || null,
+              timeAgo: "just now",
+            },
+            ...prev,
+          ]);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user?.id]);
+
   const loadNotifications = async () => {
     try {
-      setLoading(true);
       setError(null);
-
       if (!user?.id) {
         setError("User not authenticated");
         setLoading(false);
         return;
       }
 
+      setLoading(true);
       const result = await fetchNotifications(user.id);
 
       if (result.success) {
-        setNotifications(result.data);
+        setNotifications(result.data || []);
       } else {
         setError(result.msg || "Failed to load notifications");
       }
@@ -68,7 +102,7 @@ const Notifications = () => {
       );
     }
 
-    // ⚡ TODO: navigate based on notification.type (post, profile, etc.)
+    // TODO: Add navigation (e.g., to PostDetail or Profile)
     console.log("Notification pressed:", notification);
   };
 
@@ -96,89 +130,64 @@ const Notifications = () => {
     </View>
   );
 
-  if (loading && !refreshing) {
-    return (
-      <ScreenWrapper bg="black">
-        <Header title="Notifications" showBackButton={true} />
+  return (
+    <ScreenWrapper bg="black">
+      <Header title="Notifications" showBackButton={true} />
+
+      {loading && !refreshing ? (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={theme.colors.primary} />
           <Text style={styles.loadingText}>Loading notifications...</Text>
         </View>
-        <BottomBar />
-      </ScreenWrapper>
-    );
-  }
+      ) : error ? (
+        renderErrorState()
+      ) : (
+        <FlatList
+          data={notifications}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              colors={[theme.colors.primary]}
+              tintColor={theme.colors.primary}
+            />
+          }
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.listContent}
+          keyExtractor={(item, index) =>
+            item?.id?.toString() || index.toString()
+          }
+          renderItem={({ item }) => (
+            <NotificationItem
+              notification={item}
+              onPress={() => handlePressNotification(item)}
+            />
+          )}
+          ListEmptyComponent={renderEmptyState}
+        />
+      )}
 
-  return (
-    <ScreenWrapper bg="black">
-      <FlatList
-        data={notifications}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-            colors={[theme.colors.primary]}
-            tintColor={theme.colors.primary}
-          />
-        }
-        ListHeaderComponent={
-          <View style={styles.headerContainer}>
-            <Header title="Notifications" showBackButton={true} />
-            <TouchableOpacity
-              onPress={loadNotifications}
-              style={styles.refreshButton}
-            >
-              <Text style={styles.refreshButtonText}>Refresh</Text>
-            </TouchableOpacity>
-          </View>
-        }
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.listContent}
-        keyExtractor={(item) => item.id.toString()}
-        renderItem={({ item }) => (
-          <NotificationItem
-            notification={item}
-            onPress={() => handlePressNotification(item)}
-          />
-        )}
-        ListEmptyComponent={error ? renderErrorState : renderEmptyState}
-      />
       <BottomBar />
     </ScreenWrapper>
   );
 };
 
 const styles = StyleSheet.create({
-  loadingContainer: { 
-    flex: 1, 
-    justifyContent: "center", 
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "black"
+    backgroundColor: "black",
   },
   loadingText: {
     color: "white",
     marginTop: hp(2),
     fontSize: hp(1.8),
   },
-  headerContainer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: wp(4),
-    marginBottom: hp(1),
-  },
-  refreshButton: {
-    padding: wp(2),
-  },
-  refreshButtonText: {
-    color: theme.colors.primary,
-    fontSize: hp(1.8),
-    fontWeight: "600",
-  },
   listContent: {
+    flexGrow: 1,
     paddingBottom: hp(12),
     backgroundColor: "black",
-    minHeight: "100%",
   },
   emptyState: {
     flex: 1,

@@ -5,6 +5,11 @@ import {
   ScrollView,
   Alert,
   TouchableOpacity,
+  KeyboardAvoidingView,
+  Platform,
+  Animated,
+  RefreshControl,
+  Keyboard,
 } from "react-native";
 import React, { useEffect, useRef, useState } from "react";
 import { hp, wp } from "../../helpers/common";
@@ -15,7 +20,7 @@ import {
   createComment,
   removeComment,
   removePost,
-} from "../../services/postService"; 
+} from "../../services/postService";
 import PostCard from "../../components/PostCard";
 import { useAuth } from "../../contexts/AuthContext";
 import Loading from "../../components/Loading";
@@ -33,21 +38,40 @@ const PostDetails = () => {
   const { user } = useAuth();
   const router = useRouter();
   const inputRef = useRef(null);
-  const commentRef = useRef("");
+  const scrollViewRef = useRef(null);
 
   const [startLoading, setStartLoading] = useState(true);
   const [post, setPost] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const [inputFocused, setInputFocused] = useState(false);
+  const [commentText, setCommentText] = useState(""); // ✅ reactive text
+  const fadeAnim = useRef(new Animated.Value(0)).current;
 
   const handleNewComment = async (payload) => {
     if (payload.new) {
       let newComment = { ...payload.new };
       let res = await getUserData(newComment.userId);
       newComment.user = res.success ? res.data : {};
+
       setPost((prevPost) => ({
         ...prevPost,
         comments: [newComment, ...prevPost.comments],
       }));
+
+      Animated.sequence([
+        Animated.timing(fadeAnim, {
+          toValue: 1,
+          duration: 500,
+          useNativeDriver: true,
+        }),
+        Animated.timing(fadeAnim, {
+          toValue: 0,
+          duration: 1000,
+          useNativeDriver: true,
+          delay: 500,
+        }),
+      ]).start();
     }
   };
 
@@ -77,62 +101,90 @@ const PostDetails = () => {
     let res = await fetchPostDetails(postId);
     if (res.success) setPost(res.data);
     setStartLoading(false);
+    setRefreshing(false);
   }, [postId]);
 
+  const onRefresh = React.useCallback(() => {
+    setRefreshing(true);
+    getPostDetails();
+  }, []);
+
   const onNewComment = async () => {
+    if (!commentText.trim()) return;
+
     let data = {
       userId: user?.id,
       postId: post?.id,
-      text: commentRef.current,
+      text: commentText.trim(),
     };
     setLoading(true);
     let res = await createComment(data);
     setLoading(false);
     if (res.success) {
-      if(user.id !== post.userId){
+      if (user.id !== post.userId) {
         let notify = {
           senderId: user.id,
           receiverId: post.userId,
           title: "commented on your post",
-          data: JSON.stringify({postId: post.id, commentId: res.data.id}),
-        }
+          data: JSON.stringify({
+            postId: post.id,
+            commentId: res.data.id,
+          }),
+        };
         createNotification(notify);
       }
       inputRef?.current?.clear();
-      commentRef.current = "";
-    } else {
-      Alert.alert("comment", res.msg);
-    }
-  };
-
-  const onDeleteComment = async (comment) => {
-    let res = await removeComment(comment?.id);
-    if (res.success) {
-      setPost((prevPost) => {
-        let updatePost = { ...prevPost };
-        updatePost.comments = updatePost.comments.filter(
-          (e) => e.id !== comment.id
-        );
-        return updatePost;
-      });
+      setCommentText(""); // ✅ reset input
+      Keyboard.dismiss();
     } else {
       Alert.alert("Comment", res.msg);
     }
   };
 
+  const onDeleteComment = async (comment) => {
+    Alert.alert("Delete Comment", "Are you sure you want to delete this comment?", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Delete",
+        onPress: async () => {
+          let res = await removeComment(comment?.id);
+          if (res.success) {
+            setPost((prevPost) => {
+              let updatePost = { ...prevPost };
+              updatePost.comments = updatePost.comments.filter((e) => e.id !== comment.id);
+              return updatePost;
+            });
+          } else {
+            Alert.alert("Comment", res.msg);
+          }
+        },
+        style: "destructive",
+      },
+    ]);
+  };
+
   const onDeletePost = async () => {
-    let res = await removePost(post.id);
-    if (res.success) {
-      router.back();
-    } else {
-      Alert.alert("Post", res.msg);
-    }
-  }
+    Alert.alert("Delete Post", "Are you sure you want to delete this post?", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Delete",
+        onPress: async () => {
+          let res = await removePost(post.id);
+          if (res.success) {
+            router.back();
+          } else {
+            Alert.alert("Post", res.msg);
+          }
+        },
+        style: "destructive",
+      },
+    ]);
+  };
 
   const onEditPost = async (item) => {
     router.back();
-    router.push({pathname: 'newPost', params: {...item}})
-  }
+    router.push({ pathname: "newPost", params: { ...item } });
+  };
 
   if (startLoading) {
     return (
@@ -153,10 +205,24 @@ const PostDetails = () => {
   return (
     <ScreenWrapper bg="#0a0a0a">
       <Header title="Post Details" showBackButton={true} />
-      <View style={styles.container}>
+
+      <KeyboardAvoidingView
+        style={styles.container}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
+      >
         <ScrollView
+          ref={scrollViewRef}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.list}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              tintColor={theme.colors.primary}
+              colors={[theme.colors.primary]}
+            />
+          }
         >
           {/* Post Card */}
           <View style={styles.postContainer}>
@@ -172,50 +238,69 @@ const PostDetails = () => {
             />
           </View>
 
-          {/* Comment Input */}
-          <View style={styles.inputContainer}>
-            <Input
-              inputRef={inputRef}
-              style={styles.input}
-              placeholder="Type comment..."
-              placeholderTextColor="#888"
-              containerStyle={styles.inputWrapper}
-              onChangeText={(value) => (commentRef.current = value)}
-            />
-            {loading ? (
-              <View style={styles.loading}>
-                <Loading size="small" color={theme.colors.primary} />
-              </View>
-            ) : (
-              <TouchableOpacity 
-                style={styles.sendButton} 
-                onPress={onNewComment}
-                activeOpacity={0.7}
-              >
-                <Icon name="send" size={hp(2.8)} color={theme.colors.primary} />
-              </TouchableOpacity>
-            )}
-          </View>
-
           {/* Comments Section */}
-          <Text style={styles.commentsTitle}>COMMENTS</Text>
+          <View style={styles.commentsHeader}>
+            <Text style={styles.commentsTitle}>COMMENTS</Text>
+            <View style={styles.commentCountBadge}>
+              <Text style={styles.commentCountText}>{post.comments?.length || 0}</Text>
+            </View>
+          </View>
           <View style={styles.divider} />
-          
+
           <View style={styles.commentsList}>
-            {post?.comments?.map((comment) => (
-              <CommentItem
-                key={comment?.id?.toString()}
-                item={comment}
-                onDelete={onDeleteComment}
-                canDelete={user.id === comment.userId || user.id === post.userId}
-              />
+            {post?.comments?.map((comment, index) => (
+              <Animated.View key={comment?.id?.toString()} style={index === 0 ? { opacity: fadeAnim } : {}}>
+                <CommentItem
+                  item={comment}
+                  onDelete={onDeleteComment}
+                  canDelete={user.id === comment.userId || user.id === post.userId}
+                />
+              </Animated.View>
             ))}
             {post?.comments?.length === 0 && (
-              <Text style={styles.noComments}>Be the first to comment</Text>
+              <View style={styles.noCommentsContainer}>
+                <Icon name="comment" size={hp(6)} color="#444" />
+                <Text style={styles.noComments}>Be the first to comment</Text>
+              </View>
             )}
           </View>
         </ScrollView>
-      </View>
+
+        {/* Comment Input */}
+        <View style={[styles.inputContainer, inputFocused && styles.inputContainerFocused]}>
+          <View style={styles.inputWrapper}>
+            <Input
+              inputRef={inputRef}
+              style={styles.input}
+              placeholder="Type your comment..."
+              placeholderTextColor="#888"
+              value={commentText}
+              onChangeText={setCommentText}
+              onFocus={() => setInputFocused(true)}
+              onBlur={() => setInputFocused(false)}
+              multiline
+              maxLength={500}
+            />
+            {commentText.length > 0 && (
+              <Text style={styles.charCount}>{commentText.length}/500</Text>
+            )}
+          </View>
+          {loading ? (
+            <View style={styles.sendButton}>
+              <Loading size="small" color={theme.colors.primary} />
+            </View>
+          ) : (
+            <TouchableOpacity
+              style={[styles.sendButton, commentText.trim() && styles.sendButtonActive]}
+              onPress={onNewComment}
+              activeOpacity={0.7}
+              disabled={!commentText.trim()}
+            >
+              <Icon name="send" size={hp(2.4)} color={commentText.trim() ? "#fff" : "#666"} />
+            </TouchableOpacity>
+          )}
+        </View>
+      </KeyboardAvoidingView>
     </ScreenWrapper>
   );
 };
@@ -223,88 +308,74 @@ const PostDetails = () => {
 export default PostDetails;
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    paddingTop: hp(1),
-  },
-  list: {
-    paddingHorizontal: wp(4),
-    paddingBottom: hp(4),
-  },
-  center: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-  },
+  container: { flex: 1 },
+  list: { paddingHorizontal: wp(4), paddingBottom: hp(12) },
+  center: { flex: 1, justifyContent: "center", alignItems: "center" },
   postContainer: {
     borderRadius: 16,
-    overflow: 'hidden',
+    overflow: "hidden",
     marginBottom: hp(3),
-    backgroundColor: 'rgba(30, 30, 30, 0.7)',
-    borderWidth: 0.5,
-    borderColor: 'rgba(255,255,255,0.1)',
+    backgroundColor: "rgba(30, 30, 30, 0.7)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.1)",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4.65,
+    elevation: 8,
   },
   inputContainer: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
     flexDirection: "row",
-    alignItems: "center",
-    marginBottom: hp(3),
+    alignItems: "flex-end",
+    paddingHorizontal: wp(4),
+    paddingVertical: hp(2),
+    backgroundColor: "#0a0a0a",
+    borderTopWidth: 1,
+    borderTopColor: "#1f1f1f",
   },
+  inputContainerFocused: { backgroundColor: "#111" },
   inputWrapper: {
     flex: 1,
-    height: hp(6.5),
-    borderRadius: 30,
-    backgroundColor: '#1a1a1a',
+    minHeight: hp(5.5),
+    maxHeight: hp(15),
+    borderRadius: 24,
+    backgroundColor: "#1a1a1a",
     borderWidth: 1,
-    borderColor: '#333',
+    borderColor: "#2a2a2a",
     paddingHorizontal: wp(4),
+    paddingTop: hp(1.5),
+    paddingBottom: hp(1),
   },
-  input: {
-    color: '#fff',
-    fontSize: hp(1.9),
-  },
+  input: { color: "#fff", fontSize: hp(1.9), padding: 0, maxHeight: hp(12) },
+  charCount: { color: "#666", fontSize: hp(1.4), textAlign: "right", marginTop: hp(0.5) },
   sendButton: {
-    marginLeft: wp(2),
-    width: hp(6.5),
-    height: hp(6.5),
-    borderRadius: hp(3.25),
-    backgroundColor: '#1a1a1a',
-    justifyContent: 'center',
-    alignItems: 'center',
+    width: hp(5.5),
+    height: hp(5.5),
+    borderRadius: hp(2.75),
+    backgroundColor: "#1a1a1a",
+    justifyContent: "center",
+    alignItems: "center",
     borderWidth: 1,
-    borderColor: '#333',
-  },
-  loading: {
+    borderColor: "#2a2a2a",
     marginLeft: wp(2),
-    width: hp(6.5),
-    height: hp(6.5),
-    justifyContent: 'center',
-    alignItems: 'center',
   },
-  commentsTitle: {
-    color: '#888',
-    fontSize: hp(1.8),
-    fontWeight: '600',
-    letterSpacing: 1,
-    marginBottom: hp(1),
+  sendButtonActive: { backgroundColor: theme.colors.primary, borderColor: theme.colors.primary },
+  commentsHeader: { flexDirection: "row", alignItems: "center", marginBottom: hp(1.5) },
+  commentsTitle: { color: "#fff", fontSize: hp(2.1), fontWeight: "700", marginRight: wp(2) },
+  commentCountBadge: {
+    backgroundColor: theme.colors.primary,
+    borderRadius: 12,
+    paddingHorizontal: wp(2),
+    paddingVertical: hp(0.3),
   },
-  divider: {
-    height: 1,
-    backgroundColor: '#333',
-    marginBottom: hp(2),
-  },
-  commentsList: {
-    gap: hp(2.5),
-  },
-  noComments: {
-    color: '#666',
-    fontSize: hp(1.9),
-    textAlign: 'center',
-    marginTop: hp(2),
-    fontStyle: 'italic',
-  },
-  notFound: {
-    color: '#fff',
-    fontSize: hp(2.2),
-    fontWeight: '500',
-  },
+  commentCountText: { color: "#fff", fontSize: hp(1.6), fontWeight: "600" },
+  divider: { height: 1, backgroundColor: "#2a2a2a", marginBottom: hp(3) },
+  commentsList: { gap: hp(2.5), paddingBottom: hp(2) },
+  noCommentsContainer: { alignItems: "center", justifyContent: "center", paddingVertical: hp(8), opacity: 0.7 },
+  noComments: { color: "#888", fontSize: hp(1.9), textAlign: "center", marginTop: hp(2), fontStyle: "italic" },
+  notFound: { color: "#fff", fontSize: hp(2.2), fontWeight: "500" },
 });
